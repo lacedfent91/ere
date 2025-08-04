@@ -1,0 +1,3028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Botnet Billionaire</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-color: #00ff00;
+            --primary-glow: 0, 255, 0;
+            --secondary-color: #00aaaa;
+            --background-color: #000;
+        }
+        
+        body {
+            background: var(--background-color);
+            color: var(--primary-color);
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            position: relative;
+        }
+        
+        /* Animated terminal background */
+        #terminal-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            line-height: 1.3;
+            color: rgba(0, 255, 0, 0.08);
+            overflow: hidden;
+            pointer-events: none;
+        }
+        
+        .terminal-line {
+            position: absolute;
+            white-space: nowrap;
+            animation: scroll-left linear infinite;
+        }
+        
+        @keyframes scroll-left {
+            0% { transform: translateX(100vw); opacity: 0; }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.3; }
+            100% { transform: translateX(-100%); opacity: 0; }
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, #001100 0%, #000000 70%);
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        .ui-panel {
+            background: linear-gradient(135deg, rgba(var(--primary-glow), 0.1), rgba(var(--primary-glow), 0.05));
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            box-shadow: 0 0 20px rgba(var(--primary-glow), 0.3), inset 0 0 10px rgba(var(--primary-glow), 0.1);
+            backdrop-filter: blur(5px);
+            pointer-events: auto;
+            border-radius: 8px;
+        }
+        
+        .stats-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 250px;
+            padding: 15px;
+        }
+        
+        .upgrades-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 320px;
+            height: calc(100vh - 20px);
+            padding: 15px;
+            overflow-y: auto;
+        }
+        
+        .player-profile-panel {
+            position: absolute;
+            top: 10px;
+            right: 340px;
+            width: 200px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .profile-avatar {
+            font-size: 40px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            display: block;
+        }
+        
+        .profile-avatar:hover {
+            transform: scale(1.2) rotateY(180deg);
+        }
+        
+        .profile-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 5px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .profile-name:hover {
+            text-shadow: 0 0 10px var(--primary-color);
+        }
+        
+        .nodes-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            width: 400px;
+            max-height: 150px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        
+        .prestige-panel {
+            position: absolute;
+            bottom: 10px;
+            right: 550px;
+            width: 200px;
+            padding: 15px;
+        }
+        
+        .prestige-shop-panel {
+            position: absolute;
+            bottom: 10px;
+            right: 340px;
+            width: 200px;
+            padding: 15px;
+        }
+        
+        .leaderboard-panel {
+            position: absolute;
+            top: 280px;
+            left: 10px;
+            width: 250px;
+            max-height: 200px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        
+        .menu-buttons-panel {
+            position: absolute;
+            top: 490px;
+            left: 10px;
+            width: 250px;
+            padding: 8px;
+        }
+        
+        /* Enhanced button hover effects */
+        .ui-button, .upgrade-button, .node-button, .menu-button {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ui-button:hover, .upgrade-button:hover:not(:disabled), .node-button:hover:not(:disabled), .menu-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 255, 0, 0.4);
+            background: linear-gradient(135deg, rgba(0, 50, 0, 0.9), rgba(0, 70, 0, 0.8));
+        }
+        
+        .ui-button:active, .upgrade-button:active, .node-button:active, .menu-button:active {
+            transform: translateY(0);
+        }
+        
+        .settings-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            padding: 20px;
+            z-index: 2000;
+            display: none;
+        }
+        
+        .achievements-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            max-height: 70vh;
+            padding: 20px;
+            z-index: 2000;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .botnet-visualization {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 350px;
+            height: 120px;
+            border: 1px solid #00aa00;
+            border-radius: 8px;
+            padding: 10px;
+            background: rgba(0, 20, 0, 0.3);
+            z-index: 50;
+            overflow: hidden;
+        }
+        
+        #botnet-nodes {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 3px;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .hackerman-container {
+            position: absolute;
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 150px;
+            z-index: 60;
+        }
+        
+        @media (max-width: 768px) {
+            .hackerman-container {
+                left: 50%;
+                transform: translateX(-50%);
+                width: 100px;
+                height: 130px;
+                top: 10%;
+            }
+            
+            .hackerman-character {
+                font-size: 20px;
+            }
+            
+            .hackerman-face {
+                font-size: 28px !important;
+            }
+            
+            .hackerman-status {
+                font-size: 7px !important;
+            }
+            
+            .hackerman-speech {
+                font-size: 9px !important;
+                max-width: 150px;
+            }
+        }
+        
+        .hackerman-character {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #001100, #003300);
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+            animation: hackerPulse 2s infinite ease-in-out;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .hackerman-character:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+        }
+        
+        .hackerman-face {
+            font-size: 32px;
+            margin-bottom: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .hackerman-status {
+            font-size: 8px;
+            text-align: center;
+            color: #00aaaa;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .hackerman-speech {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 20, 0, 0.95);
+            border: 1px solid #00ff00;
+            border-radius: 15px;
+            padding: 8px 12px;
+            font-size: 10px;
+            color: #00ff00;
+            white-space: nowrap;
+            max-width: 200px;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+            animation: speechBubble 3s ease-in-out;
+        }
+        
+        .hackerman-speech::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid #00ff00;
+        }
+        
+        @keyframes hackerPulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            }
+            50% { 
+                transform: scale(1.02);
+                box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+            }
+        }
+        
+        @keyframes speechBubble {
+            0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+        }
+        
+        .hackerman-excited {
+            animation: hackerExcited 1s ease-in-out;
+        }
+        
+        .hackerman-celebrating {
+            animation: hackerCelebrate 2s ease-in-out;
+        }
+        
+        @keyframes hackerExcited {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-2deg); }
+            50% { transform: scale(1.15) rotate(2deg); }
+            75% { transform: scale(1.1) rotate(-1deg); }
+        }
+        
+        @keyframes hackerCelebrate {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            10% { transform: scale(1.2) rotate(-5deg); }
+            20% { transform: scale(1.1) rotate(5deg); }
+            30% { transform: scale(1.25) rotate(-3deg); }
+            40% { transform: scale(1.15) rotate(3deg); }
+            50% { transform: scale(1.3) rotate(-2deg); }
+            60% { transform: scale(1.2) rotate(2deg); }
+            70% { transform: scale(1.1) rotate(-1deg); }
+            80% { transform: scale(1.05) rotate(1deg); }
+            90% { transform: scale(1.02) rotate(0deg); }
+        }
+        
+        .node-icon {
+            width: 16px;
+            height: 16px;
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00aa00;
+            border-radius: 3px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+            flex-shrink: 0;
+            margin: 1px;
+            color: #00ff00;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        
+        .stat-label {
+            color: #00aaaa;
+        }
+        
+        .stat-value {
+            color: #00ff00;
+            font-weight: bold;
+            text-shadow: 0 0 5px #00ff00;
+        }
+        
+        .section-title {
+            color: #00ffff;
+            font-weight: bold;
+            font-size: 14px;
+            margin: 10px 0 5px 0;
+            text-align: center;
+            text-shadow: 0 0 10px #00ffff;
+            border-bottom: 1px solid #00ffff;
+            padding-bottom: 5px;
+        }
+        
+        .upgrade-button, .node-button {
+            background: linear-gradient(135deg, rgba(0, 30, 0, 0.9), rgba(0, 50, 0, 0.7));
+            border: 1px solid #00aa00;
+            color: #00ff00;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            padding: 8px 10px;
+            margin: 3px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+            width: 100%;
+            text-align: left;
+            min-height: 44px;
+            touch-action: manipulation;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .upgrade-button:hover, .node-button:hover {
+            background: linear-gradient(135deg, rgba(0, 50, 0, 0.9), rgba(0, 70, 0, 0.8));
+            border-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+            transform: translateY(-1px);
+        }
+        
+        .upgrade-button:active, .node-button:active {
+            transform: translateY(1px);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+        }
+        
+        .upgrade-button:disabled, .node-button:disabled {
+            background: linear-gradient(135deg, rgba(20, 0, 0, 0.6), rgba(40, 0, 0, 0.4));
+            border-color: #aa0000;
+            color: #aa0000;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .upgrade-name {
+            font-weight: bold;
+            color: #00ffff;
+            font-size: 10px;
+        }
+        
+        .upgrade-cost {
+            color: #ffff00;
+            font-size: 8px;
+            float: right;
+        }
+        
+        .upgrade-cost.purchased {
+            color: #888888;
+        }
+        
+        .upgrade-cost.affordable {
+            color: #00ff00;
+            font-weight: bold;
+        }
+        
+        .upgrade-cost.unaffordable {
+            color: #ff4444;
+        }
+        
+        .glitchy-title {
+            position: absolute;
+            top: 48%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff00;
+            text-shadow: 
+                0 0 5px #00ff00,
+                0 0 10px #00ff00,
+                0 0 15px #00ff00;
+            animation: glitchText 3s infinite;
+            z-index: 55;
+        }
+        
+        .menu-buttons-panel {
+            position: absolute;
+            top: 540px;
+            left: 10px;
+            width: 250px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 56;
+        }
+        
+        .menu-buttons-panel .menu-button {
+            flex: 1;
+            font-size: 10px;
+            padding: 6px 8px;
+            margin: 0;
+        }
+        
+        @keyframes glitchText {
+            0%, 20%, 40%, 60%, 80%, 100% {
+                text-shadow: 
+                    0 0 5px #00ff00,
+                    0 0 10px #00ff00,
+                    0 0 15px #00ff00;
+                transform: translateX(-50%);
+            }
+            10% {
+                text-shadow: 
+                    -2px 0 #ff0000,
+                    2px 0 #0000ff,
+                    0 0 10px #00ff00;
+                transform: translateX(-50%) skew(-2deg);
+            }
+            30% {
+                text-shadow: 
+                    2px 0 #ff0000,
+                    -2px 0 #0000ff,
+                    0 0 15px #00ff00;
+                transform: translateX(-50%) skew(1deg);
+            }
+            50% {
+                text-shadow: 
+                    1px 0 #ff0000,
+                    -1px 0 #0000ff,
+                    0 0 8px #00ff00;
+                transform: translateX(-50%) skew(-1deg);
+            }
+            70% {
+                text-shadow: 
+                    -1px 0 #ff0000,
+                    1px 0 #0000ff,
+                    0 0 12px #00ff00;
+                transform: translateX(-50%) skew(0.5deg);
+            }
+            90% {
+                text-shadow: 
+                    1px 0 #ff0000,
+                    -1px 0 #0000ff,
+                    0 0 7px #00ff00;
+                transform: translateX(-50%) skew(-0.5deg);
+            }
+        }
+        
+        .upgrade-description {
+            color: #aaaaaa;
+            font-size: 8px;
+            margin-top: 2px;
+        }
+        
+        .hack-button-container {
+            position: absolute;
+            top: 65%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 70;
+        }
+        
+        .hack-button {
+            background: linear-gradient(135deg, #002200, #004400, #002200);
+            border: 4px solid #00ff00;
+            color: #00ff00;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
+            font-size: 24px;
+            padding: 30px 60px;
+            cursor: pointer;
+            transition: all 0.1s;
+            border-radius: 12px;
+            text-shadow: 0 0 15px #00ff00;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.4), inset 0 0 20px rgba(0, 255, 0, 0.1);
+            min-width: 200px;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .hack-button:hover {
+            background: linear-gradient(135deg, #003300, #006600, #003300);
+            box-shadow: 0 0 40px rgba(0, 255, 0, 0.6), inset 0 0 25px rgba(0, 255, 0, 0.2);
+            transform: scale(1.05);
+        }
+        
+        .hack-button:active {
+            transform: scale(0.98);
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.8), inset 0 0 30px rgba(0, 255, 0, 0.3);
+        }
+        
+        .prestige-button {
+            background: linear-gradient(135deg, #220044, #440066);
+            border: 2px solid #ff00ff;
+            color: #ff00ff;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ff00ff;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 6px;
+            padding: 12px;
+            width: 100%;
+            min-height: 48px;
+        }
+        
+        .prestige-button:hover {
+            background: linear-gradient(135deg, #330055, #550088);
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+            transform: scale(1.02);
+        }
+        
+        .prestige-button:disabled {
+            background: linear-gradient(135deg, #220022, #440044);
+            border-color: #aa00aa;
+            color: #aa00aa;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .click-effect {
+            position: absolute;
+            color: #00ff00;
+            font-weight: bold;
+            font-size: 18px;
+            text-shadow: 0 0 10px #00ff00;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .achievement-popup {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(0, 50, 0, 0.95), rgba(0, 100, 50, 0.9));
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            z-index: 2000;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.6);
+            animation: achievementSlide 3s ease-in-out;
+        }
+        
+        @keyframes achievementSlide {
+            0% { transform: translateX(-50%) translateY(-100px); opacity: 0; }
+            20% { transform: translateX(-50%) translateY(0); opacity: 1; }
+            80% { transform: translateX(-50%) translateY(0); opacity: 1; }
+            100% { transform: translateX(-50%) translateY(-100px); opacity: 0; }
+        }
+        
+        .menu-button {
+            background: linear-gradient(135deg, rgba(0, 40, 40, 0.9), rgba(0, 60, 60, 0.7));
+            border: 1px solid #00ffff;
+            color: #00ffff;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            padding: 8px 12px;
+            margin: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+            min-height: 36px;
+        }
+        
+        .menu-button:hover {
+            background: linear-gradient(135deg, rgba(0, 60, 60, 0.9), rgba(0, 80, 80, 0.8));
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+        }
+        
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #aa0000;
+            border: none;
+            color: white;
+            font-size: 16px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+            padding: 5px;
+            background: rgba(0, 30, 0, 0.5);
+            border-radius: 3px;
+            font-size: 10px;
+        }
+        
+        .leaderboard-entry.current-player {
+            background: rgba(0, 50, 0, 0.8);
+            border: 1px solid #00ff00;
+        }
+        
+        .achievement-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 5px 0;
+            padding: 8px;
+            background: rgba(0, 30, 0, 0.5);
+            border-radius: 4px;
+            border-left: 3px solid #00aa00;
+        }
+        
+        .achievement-item.unlocked {
+            border-left-color: #00ff00;
+            background: rgba(0, 50, 0, 0.7);
+        }
+        
+        .achievement-item.unlocked .achievement-name {
+            color: #00ff00;
+        }
+        
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(0, 30, 0, 0.5);
+            border-radius: 4px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #aa0000;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .toggle-switch.active {
+            background: #00aa00;
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .toggle-switch.active::after {
+            left: 28px;
+        }
+        
+        .scrollable {
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #00ff00 #000;
+        }
+        
+        .scrollable::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .scrollable::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+        }
+        
+        .scrollable::-webkit-scrollbar-thumb {
+            background: #00ff00;
+            border-radius: 4px;
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .upgrades-panel {
+                width: 280px;
+            }
+            
+            .hack-button {
+                font-size: 20px;
+                padding: 25px 50px;
+                min-width: 180px;
+                min-height: 100px;
+            }
+            
+            .settings-panel, .achievements-panel {
+                width: 90vw;
+                max-height: 80vh;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats-panel, .leaderboard-panel {
+                width: 200px;
+            }
+            
+            .upgrades-panel {
+                width: 250px;
+            }
+            
+            .nodes-panel {
+                width: 300px;
+            }
+            
+            .hack-button {
+                font-size: 18px;
+                padding: 20px 40px;
+                min-width: 160px;
+                min-height: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated terminal background -->
+    <div id="terminal-bg"></div>
+    
+    <!-- Debug/Testing Panel -->
+    <div id="debug-panel" style="position: fixed; top: 10px; right: 10px; z-index: 9999; background: rgba(0, 40, 0, 0.9); border: 1px solid #00ff00; padding: 10px; border-radius: 5px; font-size: 10px;">
+        <div style="color: #00ff00; font-weight: bold; margin-bottom: 5px;">DEBUG TOOLS</div>
+        <button onclick="gameState.packets = 999999999; updateDisplay();" style="background: #004400; color: #00ff00; border: 1px solid #00aa00; padding: 3px; margin: 2px; cursor: pointer;">Max Packets</button>
+        <button onclick="gameState.encryptionKeys = 100; updateDisplay();" style="background: #004400; color: #00ff00; border: 1px solid #00aa00; padding: 3px; margin: 2px; cursor: pointer;">Max Keys</button>
+        <button onclick="gameState.packets = 0; gameState.encryptionKeys = 0; updateDisplay();" style="background: #440000; color: #ff0000; border: 1px solid #aa0000; padding: 3px; margin: 2px; cursor: pointer;">Reset</button>
+    </div>
+    
+    <div id="game-container">
+        <div class="ui-overlay">
+            <!-- Stats Panel -->
+            <div class="ui-panel stats-panel">
+                <div class="section-title">SYSTEM STATUS</div>
+                <div class="stat-row">
+                    <span class="stat-label">Packets:</span>
+                    <span class="stat-value" id="packets-display">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Per Second:</span>
+                    <span class="stat-value" id="pps-display">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Malware Scripts:</span>
+                    <span class="stat-value" id="malware-display">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Encryption Keys:</span>
+                    <span class="stat-value" id="keys-display">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Click Power:</span>
+                    <span class="stat-value" id="click-power-display">1</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total Resets:</span>
+                    <span class="stat-value" id="resets-display">0</span>
+                </div>
+                
+
+            </div>
+            
+            <!-- Player Profile Panel -->
+            <div class="ui-panel player-profile-panel">
+                <div class="section-title">HACKER PROFILE</div>
+                <div class="profile-avatar" id="player-avatar" onclick="cycleAvatar()">💀</div>
+                <div class="profile-name" id="player-name" onclick="changePlayerName()">Anonymous</div>
+                <div class="stat-row">
+                    <span class="stat-label">Reputation:</span>
+                    <span class="stat-value" id="reputation-display">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Rank:</span>
+                    <span class="stat-value" id="rank-display">Noob</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Progress:</span>
+                    <span class="stat-value" id="progress-display">0%</span>
+                </div>
+            </div>
+            
+            <!-- Leaderboard Panel -->
+            <div class="ui-panel leaderboard-panel">
+                <div class="section-title">HACKER LEADERBOARD</div>
+                <div id="leaderboard-container"></div>
+            </div>
+            
+            <!-- Glitchy Title -->
+            <div class="glitchy-title">BOTNET BILLIONAIRE</div>
+            
+            <!-- Menu Buttons Panel -->
+            <div class="ui-panel menu-buttons-panel">
+                <button class="menu-button" onclick="toggleAchievements()">🏆 Achievements</button>
+                <button class="menu-button" onclick="toggleSettings()">⚙️ Settings</button>
+                <button class="menu-button" onclick="toggleCustomization()">🎨 Customize</button>
+            </div>
+            
+            <!-- Botnet Visualization -->
+            <div class="ui-panel botnet-visualization">
+                <div style="width: 100%; text-align: center; font-size: 10px; color: #00aaaa; margin-bottom: 5px;">BOTNET NETWORK</div>
+                <div id="botnet-nodes"></div>
+            </div>
+            
+            <!-- Hackerman Mascot -->
+            <div class="hackerman-container">
+                <div class="hackerman-character" id="hackerman" onclick="interactWithHackerman()">
+                    <div class="hackerman-face" id="hackerman-face">🤖</div>
+                    <div style="font-size: 10px; font-weight: bold;">HACKERMAN</div>
+                    <div class="hackerman-status" id="hackerman-status">Watching...</div>
+                </div>
+                <div class="hackerman-speech" id="hackerman-speech"></div>
+            </div>
+            
+            <!-- Hack Button -->
+            <div class="hack-button-container">
+                <button class="hack-button" id="hack-btn">HACK</button>
+                <div id="packet-counter" style="color: #00ff00; font-size: 14px; margin-top: 10px; text-align: center;">Packets: <span id="live-packets">0</span></div>
+            </div>
+            
+            <!-- Upgrades Panel -->
+            <div class="ui-panel upgrades-panel scrollable">
+                <div class="section-title">UPGRADES</div>
+                <div id="click-upgrades"></div>
+                <div id="node-upgrades"></div>
+                <div id="global-upgrades"></div>
+            </div>
+            
+            <!-- Nodes Panel -->
+            <div class="ui-panel nodes-panel scrollable">
+                <div class="section-title">BOTNET NODES</div>
+                <div id="nodes-container"></div>
+            </div>
+            
+            <!-- Prestige Panel -->
+            <div class="ui-panel prestige-panel">
+                <div class="section-title">PRESTIGE</div>
+                <div class="stat-row">
+                    <span class="stat-label">Next Gain:</span>
+                    <span class="stat-value" id="prestige-gain-display">0</span>
+                </div>
+                <button class="prestige-button" id="prestige-btn" onclick="handlePrestige()" disabled>PRESTIGE</button>
+            </div>
+            
+            <!-- Prestige Shop Panel -->
+            <div class="ui-panel prestige-shop-panel scrollable">
+                <div class="section-title">PRESTIGE SHOP</div>
+                <div id="prestige-shop-container"></div>
+            </div>
+            
+            <!-- Settings Panel -->
+            <div class="ui-panel settings-panel" id="settings-panel">
+                <button class="close-button" onclick="toggleSettings()">×</button>
+                <div class="section-title">SETTINGS</div>
+                
+                <div class="setting-row">
+                    <span>Sound Effects</span>
+                    <div class="toggle-switch active" id="sfx-toggle" onclick="toggleSfx()"></div>
+                </div>
+                
+                <div class="setting-row">
+                    <span>Background Music</span>
+                    <div class="toggle-switch active" id="music-toggle" onclick="toggleMusic()"></div>
+                </div>
+                
+                <div class="setting-row">
+                    <span>Click Effects</span>
+                    <div class="toggle-switch active" id="effects-toggle" onclick="toggleEffects()"></div>
+                </div>
+                
+                <div class="setting-row">
+                    <span>Auto-Save</span>
+                    <div class="toggle-switch active" id="autosave-toggle" onclick="toggleAutoSave()"></div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button class="menu-button" onclick="exportSave()" style="width: 100%; margin: 5px 0;">Export Save</button>
+                    <button class="menu-button" onclick="importSave()" style="width: 100%; margin: 5px 0;">Import Save</button>
+                    <button class="menu-button" onclick="resetGame()" style="width: 100%; margin: 5px 0; background: linear-gradient(135deg, #440000, #660000);">Reset Game</button>
+                </div>
+            </div>
+            
+            <!-- Achievements Panel -->
+            <div class="ui-panel achievements-panel scrollable" id="achievements-panel">
+                <button class="close-button" onclick="toggleAchievements()">×</button>
+                <div class="section-title">ACHIEVEMENTS</div>
+                <div id="achievements-container"></div>
+            </div>
+            
+            <!-- Customization Panel -->
+            <div class="ui-panel settings-panel" id="customization-panel" style="display: none;">
+                <button class="close-button" onclick="toggleCustomization()">×</button>
+                <div class="section-title">CUSTOMIZATION</div>
+                
+                <div class="setting-row">
+                    <span>UI Color Theme</span>
+                    <select id="theme-select" onchange="changeTheme()" style="background: #002200; color: #00ff00; border: 1px solid #00aa00; padding: 4px;">
+                        <option value="green">Matrix Green</option>
+                        <option value="blue">Cyber Blue</option>
+                        <option value="red">Alert Red</option>
+                        <option value="purple">Quantum Purple</option>
+                    </select>
+                </div>
+                
+                <div class="setting-row">
+                    <span>Animation Speed</span>
+                    <select id="animation-select" onchange="changeAnimationSpeed()" style="background: #002200; color: #00ff00; border: 1px solid #00aa00; padding: 4px;">
+                        <option value="slow">Slow</option>
+                        <option value="normal">Normal</option>
+                        <option value="fast">Fast</option>
+                    </select>
+                </div>
+                
+                <div class="setting-row">
+                    <span>Number Format</span>
+                    <select id="number-format-select" onchange="changeNumberFormat()" style="background: #002200; color: #00ff00; border: 1px solid #00aa00; padding: 4px;">
+                        <option value="short">Short (1.2M)</option>
+                        <option value="long">Long (1,200,000)</option>
+                        <option value="scientific">Scientific (1.2e6)</option>
+                    </select>
+                </div>
+                
+                <div class="setting-row">
+                    <span>Screen Effects</span>
+                    <div class="toggle-switch active" id="screen-effects-toggle" onclick="toggleScreenEffects()"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Hidden audio elements -->
+    <audio id="background-music" loop volume="0.2" preload="auto">
+        <source src="client/public/sounds/background.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script>
+        // Game settings
+        let gameSettings = {
+            soundEffects: true,
+            backgroundMusic: true,
+            clickEffects: true,
+            autoSave: true,
+            theme: 'green',
+            animationSpeed: 'normal',
+            numberFormat: 'short',
+            screenEffects: true
+        };
+        
+        // Hackerman state
+        let hackermanState = {
+            mood: 'neutral',
+            lastSpeech: 0,
+            speechCooldown: 5000,
+            lastPackets: 0,
+            lastNodes: 0,
+            currentExpression: '🤖'
+        };
+        
+        // Audio Context for sound effects
+        let audioContext;
+        let audioInitialized = false;
+        
+        // Game state
+        let gameState = {
+            packets: 0,
+            malwareScripts: 0,
+            encryptionKeys: 0,
+            totalPacketsEarned: 0,
+            clickPower: 1,
+            packetsPerSecond: 0,
+            lastUpdate: Date.now(),
+            
+            // Botnet nodes
+            nodes: {
+                raspberryPi: { count: 0, baseCost: 10, baseProduction: 0.1, cost: 10 },
+                smartphone: { count: 0, baseCost: 100, baseProduction: 1, cost: 100 },
+                pc: { count: 0, baseCost: 1000, baseProduction: 8, cost: 1000 },
+                server: { count: 0, baseCost: 12000, baseProduction: 47, cost: 12000 },
+                smartFridge: { count: 0, baseCost: 130000, baseProduction: 260, cost: 130000 },
+                mainframe: { count: 0, baseCost: 1400000, baseProduction: 1400, cost: 1400000 },
+                satellite: { count: 0, baseCost: 20000000, baseProduction: 7800, cost: 20000000 },
+                aiHypercluster: { count: 0, baseCost: 330000000, baseProduction: 44000, cost: 330000000 }
+            },
+            
+            // Upgrades
+            clickUpgrades: [],
+            nodeUpgrades: [],
+            globalUpgrades: [],
+            
+            // Achievements
+            achievements: [],
+            
+            // Prestige
+            totalResets: 0,
+            nextPrestigeGain: 0,
+            prestigeUpgrades: [],
+            
+            // Game settings
+            lastSave: Date.now()
+        };
+
+        // Node definitions
+        const nodeTypes = {
+            raspberryPi: { 
+                name: 'Raspberry Pi Miners', 
+                description: 'Tiny but persistent packet miners',
+                icon: '🔋'
+            },
+            smartphone: { 
+                name: 'Infected Smartphones', 
+                description: 'Mobile botnet agents',
+                icon: '📱'
+            },
+            pc: { 
+                name: 'Compromised PCs', 
+                description: 'Desktop packet factories',
+                icon: '💻'
+            },
+            server: { 
+                name: 'Office Servers', 
+                description: 'Corporate network nodes',
+                icon: '🖥️'
+            },
+            smartFridge: { 
+                name: 'IoT Smart Fridges', 
+                description: 'Kitchen appliance armies',
+                icon: '❄️'
+            },
+            mainframe: { 
+                name: 'Corporate Mainframes', 
+                description: 'High-value targets',
+                icon: '🏢'
+            },
+            satellite: { 
+                name: 'Satellite Hijacks', 
+                description: 'Orbital packet relays',
+                icon: '🛰️'
+            },
+            aiHypercluster: { 
+                name: 'AI Hyperclusters', 
+                description: 'Machine learning overlords',
+                icon: '🤖'
+            }
+        };
+
+        // Fake leaderboard data
+        const fakeHackers = [
+            { name: 'CyberPhantom', packets: 999999999, pps: 50000000 },
+            { name: 'CodeBreaker', packets: 750000000, pps: 35000000 },
+            { name: 'NeonHacker', packets: 500000000, pps: 25000000 },
+            { name: 'QuantumCrack', packets: 300000000, pps: 15000000 },
+            { name: 'DarkScript', packets: 200000000, pps: 10000000 },
+            { name: 'BinaryGhost', packets: 100000000, pps: 8000000 },
+            { name: 'HexMaster', packets: 75000000, pps: 6000000 },
+            { name: 'CyberNinja', packets: 50000000, pps: 4000000 },
+            { name: 'ByteBandit', packets: 25000000, pps: 2000000 },
+            { name: 'NetWarden', packets: 10000000, pps: 1000000 }
+        ];
+
+        // Initialize audio context
+        function initAudio() {
+            if (!audioInitialized) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    audioInitialized = true;
+                    
+                    // Start background music
+                    if (gameSettings.backgroundMusic) {
+                        startBackgroundMusic();
+                    }
+                } catch (e) {
+                    console.log('Audio context failed to initialize:', e);
+                }
+            }
+        }
+
+        // Generate background music
+        function startBackgroundMusic() {
+            if (!audioInitialized || !gameSettings.backgroundMusic) return;
+            
+            // Create faster, more aggressive cyberpunk background track
+            const playHackerNote = (frequency, duration, type = 'sawtooth', delay = 0) => {
+                setTimeout(() => {
+                    if (!gameSettings.backgroundMusic) return;
+                    
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    const filterNode = audioContext.createBiquadFilter();
+                    
+                    oscillator.connect(filterNode);
+                    filterNode.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.type = type;
+                    oscillator.frequency.value = frequency;
+                    filterNode.type = 'lowpass';
+                    filterNode.frequency.value = frequency * 2;
+                    
+                    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.03, audioContext.currentTime + 0.05);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + duration);
+                }, delay);
+            };
+            
+            // Play faster, more intense cyberpunk sequence
+            const sequence = () => {
+                if (!gameSettings.backgroundMusic) return;
+                
+                // Main aggressive bassline
+                playHackerNote(55, 0.3, 'sawtooth', 0);     // A1
+                playHackerNote(65.4, 0.3, 'sawtooth', 300); // C2
+                playHackerNote(73.4, 0.3, 'sawtooth', 600); // D2
+                playHackerNote(82.4, 0.3, 'sawtooth', 900); // E2
+                
+                // Higher frequency arpeggios
+                playHackerNote(220, 0.2, 'square', 1200);   // A3
+                playHackerNote(261.6, 0.2, 'square', 1400); // C4
+                playHackerNote(293.7, 0.2, 'square', 1600); // D4
+                playHackerNote(329.6, 0.2, 'square', 1800); // E4
+                
+                // Glitchy high frequencies
+                playHackerNote(880, 0.1, 'triangle', 2000);  // A5
+                playHackerNote(1046.5, 0.1, 'triangle', 2100); // C6
+                
+                setTimeout(sequence, 2500); // Much faster loop
+            };
+            
+            sequence();
+        }
+
+        // Play sound effect
+        function playSound(frequency, duration, type = 'sine', volume = 0.1) {
+            if (!audioInitialized || !gameSettings.soundEffects) return;
+            
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                const filterNode = audioContext.createBiquadFilter();
+                
+                oscillator.connect(filterNode);
+                filterNode.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.type = type;
+                oscillator.frequency.value = frequency;
+                
+                // Add filtering for better sound quality
+                filterNode.type = 'lowpass';
+                filterNode.frequency.value = frequency * 1.5;
+                filterNode.Q.value = 1;
+                
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(volume * 0.7, audioContext.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            } catch (e) {
+                console.log('Audio error:', e);
+            }
+        }
+
+        // Format large numbers
+        function formatNumber(num) {
+            if (!gameSettings.numberFormat) gameSettings.numberFormat = 'short';
+            
+            if (gameSettings.numberFormat === 'long') {
+                return Math.floor(num).toLocaleString();
+            } else if (gameSettings.numberFormat === 'scientific') {
+                return num.toExponential(2);
+            } else { // short format
+                if (num < 1000) return Math.floor(num).toString();
+                if (num < 1000000) return (num / 1000).toFixed(1) + 'K';
+                if (num < 1000000000) return (num / 1000000).toFixed(1) + 'M';
+                if (num < 1000000000000) return (num / 1000000000).toFixed(1) + 'B';
+                if (num < 1000000000000000) return (num / 1000000000000).toFixed(1) + 'T';
+                return (num / 1000000000000000).toFixed(1) + 'Q';
+            }
+        }
+        
+        // Get total number of nodes
+        function getTotalNodes() {
+            return Object.values(gameState.nodes).reduce((total, node) => total + node.count, 0);
+        }
+
+        // Initialize prestige upgrades
+        function initializePrestigeUpgrades() {
+            gameState.prestigeUpgrades = [
+                { id: 'prestige_click1', name: 'Enhanced Scripts', description: 'Start with 2x click power after prestige', cost: 1, bought: false, effect: 'clickStart', value: 2 },
+                { id: 'prestige_auto1', name: 'Auto-Clicker Boost', description: 'All auto-clickers 50% faster', cost: 2, bought: false, effect: 'autoBoost', value: 1.5 },
+                { id: 'prestige_cost1', name: 'Bulk Discounts', description: 'All costs reduced by 10%', cost: 3, bought: false, effect: 'costReduction', value: 0.1 },
+                { id: 'prestige_offline1', name: 'Offline Earnings', description: 'Earn 25% of income while offline', cost: 5, bought: false, effect: 'offlineEarnings', value: 0.25 },
+                { id: 'prestige_click2', name: 'Power Boost', description: 'Start with 5x click power after prestige', cost: 8, bought: false, effect: 'clickStart', value: 5 },
+                { id: 'prestige_auto2', name: 'Super Automation', description: 'All auto-clickers 100% faster', cost: 10, bought: false, effect: 'autoBoost', value: 2 },
+                { id: 'prestige_production1', name: 'Production Multiplier', description: 'All production +100%', cost: 15, bought: false, effect: 'productionBoost', value: 2 },
+                { id: 'prestige_offline2', name: 'Advanced Offline', description: 'Earn 50% of income while offline', cost: 20, bought: false, effect: 'offlineEarnings', value: 0.5 },
+                { id: 'prestige_click3', name: 'Mega Power', description: 'Start with 10x click power after prestige', cost: 25, bought: false, effect: 'clickStart', value: 10 },
+                { id: 'prestige_auto3', name: 'Quantum Automation', description: 'All auto-clickers 200% faster', cost: 30, bought: false, effect: 'autoBoost', value: 3 },
+                { id: 'prestige_production2', name: 'Super Production', description: 'All production +500%', cost: 50, bought: false, effect: 'productionBoost', value: 6 },
+                { id: 'prestige_offline3', name: 'Full Offline', description: 'Earn 100% of income while offline', cost: 75, bought: false, effect: 'offlineEarnings', value: 1 },
+                { id: 'prestige_ultimate', name: 'Hacker God Mode', description: 'All bonuses doubled', cost: 100, bought: false, effect: 'ultimateBoost', value: 2 }
+            ];
+        }
+
+        // Initialize upgrades
+        function initializeUpgrades() {
+            // Click upgrades (30) - sorted by cost
+            gameState.clickUpgrades = [
+                { id: 'click1', name: 'Better Scripts', description: 'Double click power', cost: 100, bought: false },
+                { id: 'clickmult1', name: 'Parallel Processing', description: 'Click power +50%', cost: 500, bought: false },
+                { id: 'click2', name: 'Advanced Algorithms', description: 'Triple click power', cost: 1000, bought: false },
+                { id: 'crit1', name: 'Lucky Scripts', description: '5% chance for 2x click', cost: 1500, bought: false },
+                { id: 'autoclick1', name: 'Macro Recorder', description: 'Auto-click 1/sec', cost: 2000, bought: false },
+                { id: 'special1', name: 'Code Injection', description: 'Packets from nodes +10%', cost: 3000, bought: false },
+                { id: 'clickmult2', name: 'GPU Acceleration', description: 'Click power +100%', cost: 5000, bought: false },
+                { id: 'click3', name: 'Quantum Computing', description: '5x click power', cost: 10000, bought: false },
+                { id: 'synergy1', name: 'Network Effects', description: 'Each node type boosts others +1%', cost: 10000, bought: false },
+                { id: 'crit2', name: 'Fortune Algorithms', description: '10% chance for 3x click', cost: 15000, bought: false },
+                { id: 'autoclick2', name: 'Bot Framework', description: 'Auto-click 5/sec', cost: 20000, bought: false },
+                { id: 'special2', name: 'Memory Overflow', description: 'All production +25%', cost: 30000, bought: false },
+                { id: 'clickmult3', name: 'Distributed Computing', description: 'Click power +200%', cost: 50000, bought: false },
+                { id: 'click4', name: 'Neural Networks', description: '10x click power', cost: 100000, bought: false },
+                { id: 'synergy2', name: 'Botnet Coordination', description: 'Each 10 total nodes: +5% all production', cost: 100000, bought: false },
+                { id: 'crit3', name: 'Serendipity Engine', description: '15% chance for 5x click', cost: 150000, bought: false },
+                { id: 'autoclick3', name: 'Advanced Automation', description: 'Auto-click 10/sec', cost: 200000, bought: false },
+                { id: 'special3', name: 'Buffer Overflow', description: 'All production +50%', cost: 300000, bought: false },
+                { id: 'clickmult4', name: 'Supercomputer Access', description: 'Click power +500%', cost: 500000, bought: false },
+                { id: 'click5', name: 'AI Assistance', description: '20x click power', cost: 1000000, bought: false },
+                { id: 'synergy3', name: 'Swarm Intelligence', description: 'Each 100 total nodes: +10% all production', cost: 1000000, bought: false },
+                { id: 'crit4', name: 'Chaos Theory', description: '20% chance for 10x click', cost: 1500000, bought: false },
+                { id: 'autoclick4', name: 'AI Clicking', description: 'Auto-click 25/sec', cost: 2000000, bought: false },
+                { id: 'special4', name: 'Stack Smashing', description: 'All production +100%', cost: 3000000, bought: false },
+                { id: 'clickmult5', name: 'Quantum Supremacy', description: 'Click power +1000%', cost: 5000000, bought: false },
+                { id: 'synergy4', name: 'Hive Mind', description: 'Each 1000 total nodes: +25% all production', cost: 10000000, bought: false },
+                { id: 'crit5', name: 'Probability Manipulation', description: '25% chance for 100x click', cost: 15000000, bought: false },
+                { id: 'autoclick5', name: 'Quantum Clicking', description: 'Auto-click 100/sec', cost: 20000000, bought: false },
+                { id: 'special5', name: 'Kernel Panic', description: 'All production +500%', cost: 30000000, bought: false },
+                { id: 'synergy5', name: 'Collective Consciousness', description: 'Each 10000 total nodes: +100% all production', cost: 100000000, bought: false }
+            ];
+
+            // Node upgrades (7 for each of 8 node types = 56) - sorted by cost within each node type
+            gameState.nodeUpgrades = [];
+            Object.keys(nodeTypes).forEach(nodeKey => {
+                const nodeName = nodeTypes[nodeKey].name;
+                const nodeUpgrades = [
+                    { id: `${nodeKey}_eff1`, name: `${nodeName} Efficiency I`, description: `Double ${nodeName} production`, cost: gameState.nodes[nodeKey].baseCost * 10, bought: false, nodeType: nodeKey, multiplier: 2 },
+                    { id: `${nodeKey}_cost1`, name: `${nodeName} Bulk Orders`, description: `${nodeName} cost -10%`, cost: gameState.nodes[nodeKey].baseCost * 50, bought: false, nodeType: nodeKey, costReduction: 0.1 },
+                    { id: `${nodeKey}_eff2`, name: `${nodeName} Efficiency II`, description: `Triple ${nodeName} production`, cost: gameState.nodes[nodeKey].baseCost * 100, bought: false, nodeType: nodeKey, multiplier: 3 },
+                    { id: `${nodeKey}_cost2`, name: `${nodeName} Mass Production`, description: `${nodeName} cost -25%`, cost: gameState.nodes[nodeKey].baseCost * 500, bought: false, nodeType: nodeKey, costReduction: 0.25 },
+                    { id: `${nodeKey}_eff3`, name: `${nodeName} Efficiency III`, description: `5x ${nodeName} production`, cost: gameState.nodes[nodeKey].baseCost * 1000, bought: false, nodeType: nodeKey, multiplier: 5 },
+                    { id: `${nodeKey}_synergy`, name: `${nodeName} Network`, description: `${nodeName} boost all other nodes +5%`, cost: gameState.nodes[nodeKey].baseCost * 5000, bought: false, nodeType: nodeKey, globalBonus: 0.05 },
+                    { id: `${nodeKey}_eff4`, name: `${nodeName} Overclock`, description: `10x ${nodeName} production`, cost: gameState.nodes[nodeKey].baseCost * 10000, bought: false, nodeType: nodeKey, multiplier: 10 }
+                ];
+                gameState.nodeUpgrades.push(...nodeUpgrades);
+            });
+
+            // Global upgrades (20) - sorted by cost
+            gameState.globalUpgrades = [
+                { id: 'global1', name: 'Network Optimization', description: 'All production +50%', cost: 50000, bought: false, multiplier: 1.5 },
+                { id: 'malware1', name: 'Script Generation', description: 'Generate 1 Malware Script per 1000 packets', cost: 100000, bought: false, scriptGen: 0.001 },
+                { id: 'global2', name: 'Advanced Protocols', description: 'All production +100%', cost: 500000, bought: false, multiplier: 2 },
+                { id: 'cost1', name: 'Bulk Discounts', description: 'All upgrade costs -10%', cost: 500000, bought: false, costReduction: 0.1 },
+                { id: 'prestige1', name: 'Enhanced Encryption', description: 'Encryption Keys 25% more effective', cost: 1000000, bought: false, prestigeBonus: 0.25 },
+                { id: 'malware2', name: 'Advanced Scripts', description: 'Generate 1 Malware Script per 100 packets', cost: 1000000, bought: false, scriptGen: 0.01 },
+                { id: 'global3', name: 'Quantum Networking', description: 'All production +200%', cost: 5000000, bought: false, multiplier: 3 },
+                { id: 'cost2', name: 'Wholesale Prices', description: 'All upgrade costs -20%', cost: 5000000, bought: false, costReduction: 0.2 },
+                { id: 'automation1', name: 'Auto-Purchase Scripts', description: 'Auto-buy cheapest available upgrade every 30 seconds', cost: 10000000, bought: false },
+                { id: 'prestige2', name: 'Quantum Encryption', description: 'Encryption Keys 50% more effective', cost: 10000000, bought: false, prestigeBonus: 0.5 },
+                { id: 'malware3', name: 'Quantum Scripts', description: 'Generate 1 Malware Script per 10 packets', cost: 10000000, bought: false, scriptGen: 0.1 },
+                { id: 'global4', name: 'AI Network Management', description: 'All production +500%', cost: 50000000, bought: false, multiplier: 6 },
+                { id: 'cost3', name: 'Black Market Deals', description: 'All upgrade costs -35%', cost: 50000000, bought: false, costReduction: 0.35 },
+                { id: 'automation2', name: 'Smart Automation', description: 'Auto-buy cheapest upgrade every 10 seconds', cost: 100000000, bought: false },
+                { id: 'prestige3', name: 'Universal Encryption', description: 'Encryption Keys 100% more effective', cost: 100000000, bought: false, prestigeBonus: 1.0 },
+                { id: 'global5', name: 'Singularity Protocol', description: 'All production +1000%', cost: 500000000, bought: false, multiplier: 11 },
+                { id: 'automation3', name: 'AI Overseer', description: 'Auto-buy cheapest upgrade every 5 seconds', cost: 1000000000, bought: false },
+                { id: 'special_unlock1', name: 'Deep Web Access', description: 'Unlock advanced botnet capabilities', cost: 1000000000, bought: false },
+                { id: 'special_unlock2', name: 'Quantum Internet', description: 'Access to parallel universe botnets', cost: 10000000000, bought: false },
+                { id: 'special_unlock3', name: 'Multiverse Hacking', description: 'Infinite dimensional packet harvesting', cost: 100000000000, bought: false }
+            ];
+        }
+
+        // Initialize achievements
+        function initializeAchievements() {
+            gameState.achievements = [
+                { id: 'first_click', name: 'First Hack', description: 'Click the hack button for the first time', unlocked: false, condition: () => gameState.totalPacketsEarned >= 1 },
+                { id: 'packets_100', name: 'Script Kiddie', description: 'Earn 100 packets', unlocked: false, condition: () => gameState.totalPacketsEarned >= 100 },
+                { id: 'packets_1k', name: 'Junior Hacker', description: 'Earn 1,000 packets', unlocked: false, condition: () => gameState.totalPacketsEarned >= 1000 },
+                { id: 'packets_10k', name: 'Skilled Hacker', description: 'Earn 10,000 packets', unlocked: false, condition: () => gameState.totalPacketsEarned >= 10000 },
+                { id: 'packets_100k', name: 'Expert Hacker', description: 'Earn 100,000 packets', unlocked: false, condition: () => gameState.totalPacketsEarned >= 100000 },
+                { id: 'packets_1m', name: 'Elite Hacker', description: 'Earn 1 million packets', unlocked: false, condition: () => gameState.totalPacketsEarned >= 1000000 },
+                { id: 'packets_10m', name: 'Master Hacker', description: 'Earn 10 million packets', unlocked: false, condition: () => gameState.totalPacketsEarned >= 10000000 },
+                { id: 'packets_100m', name: 'Legendary Hacker', description: 'Earn 100 million packets', unlocked: false, condition: () => gameState.totalPacketsEarned >= 100000000 },
+                { id: 'packets_1b', name: 'Cyber Overlord', description: 'Earn 1 billion packets', unlocked: false, condition: () => gameState.totalPacketsEarned >= 1000000000 },
+                
+                { id: 'first_node', name: 'Network Initiation', description: 'Purchase your first botnet node', unlocked: false, condition: () => getTotalNodes() >= 1 },
+                { id: 'nodes_10', name: 'Small Network', description: 'Own 10 botnet nodes', unlocked: false, condition: () => getTotalNodes() >= 10 },
+                { id: 'nodes_100', name: 'Growing Empire', description: 'Own 100 botnet nodes', unlocked: false, condition: () => getTotalNodes() >= 100 },
+                { id: 'nodes_1000', name: 'Massive Botnet', description: 'Own 1,000 botnet nodes', unlocked: false, condition: () => getTotalNodes() >= 1000 },
+                { id: 'nodes_10000', name: 'Global Network', description: 'Own 10,000 botnet nodes', unlocked: false, condition: () => getTotalNodes() >= 10000 },
+                
+                { id: 'pps_1', name: 'Passive Income', description: 'Generate 1 packet per second', unlocked: false, condition: () => gameState.packetsPerSecond >= 1 },
+                { id: 'pps_100', name: 'Automation Master', description: 'Generate 100 packets per second', unlocked: false, condition: () => gameState.packetsPerSecond >= 100 },
+                { id: 'pps_10k', name: 'Industrial Scale', description: 'Generate 10,000 packets per second', unlocked: false, condition: () => gameState.packetsPerSecond >= 10000 },
+                { id: 'pps_1m', name: 'Mega Corporation', description: 'Generate 1 million packets per second', unlocked: false, condition: () => gameState.packetsPerSecond >= 1000000 },
+                { id: 'pps_100m', name: 'Digital Empire', description: 'Generate 100 million packets per second', unlocked: false, condition: () => gameState.packetsPerSecond >= 100000000 },
+                
+                { id: 'first_prestige', name: 'System Admin', description: 'Perform your first system reboot', unlocked: false, condition: () => gameState.totalResets >= 1 },
+                { id: 'prestige_5', name: 'Reboot Veteran', description: 'Perform 5 system reboots', unlocked: false, condition: () => gameState.totalResets >= 5 },
+                { id: 'prestige_10', name: 'Reset Master', description: 'Perform 10 system reboots', unlocked: false, condition: () => gameState.totalResets >= 10 },
+                
+                { id: 'click_power_100', name: 'Power User', description: 'Achieve 100 click power', unlocked: false, condition: () => gameState.clickPower >= 100 },
+                { id: 'click_power_1k', name: 'Super Clicker', description: 'Achieve 1,000 click power', unlocked: false, condition: () => gameState.clickPower >= 1000 },
+                { id: 'click_power_1m', name: 'Transcendent Hacker', description: 'Achieve 1 million click power', unlocked: false, condition: () => gameState.clickPower >= 1000000 },
+                
+                { id: 'all_nodes', name: 'Complete Network', description: 'Own at least 1 of every node type', unlocked: false, condition: () => Object.values(gameState.nodes).every(node => node.count > 0) },
+                { id: 'malware_100', name: 'Script Master', description: 'Accumulate 100 Malware Scripts', unlocked: false, condition: () => gameState.malwareScripts >= 100 },
+                { id: 'encryption_10', name: 'Crypto Novice', description: 'Accumulate 10 Encryption Keys', unlocked: false, condition: () => gameState.encryptionKeys >= 10 },
+                { id: 'encryption_50', name: 'Encryption Expert', description: 'Accumulate 50 Encryption Keys', unlocked: false, condition: () => gameState.encryptionKeys >= 50 },
+                { id: 'encryption_100', name: 'Crypto King', description: 'Accumulate 100 Encryption Keys', unlocked: false, condition: () => gameState.encryptionKeys >= 100 }
+            ];
+        }
+
+        // Get total nodes
+        function getTotalNodes() {
+            return Object.values(gameState.nodes).reduce((total, node) => total + node.count, 0);
+        }
+
+        // Calculate total click power
+        function calculateClickPower() {
+            let clickPower = 1; // Base click power
+            
+            // Apply click power multiplier upgrades
+            if (gameState.clickUpgrades.find(u => u.id === 'click1' && u.bought)) clickPower *= 2;
+            if (gameState.clickUpgrades.find(u => u.id === 'clickmult1' && u.bought)) clickPower *= 1.5;
+            if (gameState.clickUpgrades.find(u => u.id === 'click2' && u.bought)) clickPower *= 3;
+            if (gameState.clickUpgrades.find(u => u.id === 'clickmult2' && u.bought)) clickPower *= 2;
+            if (gameState.clickUpgrades.find(u => u.id === 'click3' && u.bought)) clickPower *= 5;
+            if (gameState.clickUpgrades.find(u => u.id === 'clickmult3' && u.bought)) clickPower *= 3;
+            if (gameState.clickUpgrades.find(u => u.id === 'click4' && u.bought)) clickPower *= 10;
+            if (gameState.clickUpgrades.find(u => u.id === 'clickmult4' && u.bought)) clickPower *= 6;
+            if (gameState.clickUpgrades.find(u => u.id === 'click5' && u.bought)) clickPower *= 20;
+            if (gameState.clickUpgrades.find(u => u.id === 'clickmult5' && u.bought)) clickPower *= 11;
+            
+            // Apply prestige bonuses
+            let prestigeMultiplier = 1;
+            gameState.prestigeUpgrades.filter(u => u.bought && u.effect === 'clickStart').forEach(upgrade => {
+                prestigeMultiplier = Math.max(prestigeMultiplier, upgrade.value);
+            });
+            clickPower *= prestigeMultiplier;
+            
+            // Apply encryption key bonus
+            clickPower *= (1 + gameState.encryptionKeys * 0.1);
+            
+            return Math.floor(clickPower);
+        }
+
+        // Handle hack click
+        function handleHackClick(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            initAudio();
+            
+            // Calculate current click power
+            gameState.clickPower = calculateClickPower();
+            let packets = gameState.clickPower;
+            let isCritical = false;
+            let critMultiplier = 1;
+            
+            // Check for critical clicks
+            if (gameState.clickUpgrades.find(u => u.id === 'crit1' && u.bought) && Math.random() < 0.05) {
+                packets *= 2;
+                isCritical = true;
+                critMultiplier = 2;
+            } else if (gameState.clickUpgrades.find(u => u.id === 'crit2' && u.bought) && Math.random() < 0.1) {
+                packets *= 3;
+                isCritical = true;
+                critMultiplier = 3;
+            } else if (gameState.clickUpgrades.find(u => u.id === 'crit3' && u.bought) && Math.random() < 0.15) {
+                packets *= 5;
+                isCritical = true;
+                critMultiplier = 5;
+            } else if (gameState.clickUpgrades.find(u => u.id === 'crit4' && u.bought) && Math.random() < 0.2) {
+                packets *= 10;
+                isCritical = true;
+                critMultiplier = 10;
+            } else if (gameState.clickUpgrades.find(u => u.id === 'crit5' && u.bought) && Math.random() < 0.25) {
+                packets *= 100;
+                isCritical = true;
+                critMultiplier = 100;
+            }
+            
+            gameState.packets += packets;
+            gameState.totalPacketsEarned += packets;
+            
+            // Trigger hackerman reaction for first click
+            hackerReactToEvent('firstClick');
+            
+            // Show click effect
+            if (gameSettings.clickEffects) {
+                let effectText = '+' + formatNumber(packets);
+                let effectColor = '#00ff00';
+                
+                if (isCritical) {
+                    if (critMultiplier >= 100) {
+                        effectText += ' LEGENDARY!';
+                        effectColor = '#ff00ff';
+                        playSound(1500, 0.3, 'sawtooth', 0.15);
+                    } else if (critMultiplier >= 10) {
+                        effectText += ' ULTRA!';
+                        effectColor = '#ff0000';
+                        playSound(1200, 0.2, 'square', 0.12);
+                    } else if (critMultiplier >= 5) {
+                        effectText += ' MEGA!';
+                        effectColor = '#ff8800';
+                        playSound(1000, 0.15, 'square', 0.1);
+                    } else {
+                        effectText += ' CRIT!';
+                        effectColor = '#ffff00';
+                        playSound(800, 0.1, 'square', 0.08);
+                    }
+                } else {
+                    playSound(600, 0.1, 'sine', 0.05);
+                }
+                
+                showClickEffect(effectText, effectColor);
+            } else {
+                playSound(600, 0.1, 'sine', 0.05);
+            }
+            
+            checkAchievements();
+            updateDisplay();
+        }
+
+        // Show click effect
+        function showClickEffect(text, color = '#00ff00') {
+            const effect = document.createElement('div');
+            effect.className = 'click-effect';
+            effect.textContent = text;
+            effect.style.color = color;
+            effect.style.left = (Math.random() * 200 + window.innerWidth/2 - 100) + 'px';
+            effect.style.top = (Math.random() * 100 + window.innerHeight/2 - 50) + 'px';
+            
+            document.body.appendChild(effect);
+            
+            let opacity = 1;
+            let y = parseInt(effect.style.top);
+            
+            const animate = () => {
+                opacity -= 0.02;
+                y -= 2;
+                effect.style.opacity = opacity;
+                effect.style.top = y + 'px';
+                
+                if (opacity > 0) {
+                    requestAnimationFrame(animate);
+                } else {
+                    if (effect.parentNode) {
+                        document.body.removeChild(effect);
+                    }
+                }
+            };
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Show achievement popup
+        function showAchievement(achievement) {
+            const popup = document.createElement('div');
+            popup.className = 'achievement-popup';
+            popup.innerHTML = `<strong>🏆 ACHIEVEMENT UNLOCKED!</strong><br>${achievement.name}<br><em>${achievement.description}</em>`;
+            
+            document.body.appendChild(popup);
+            
+            setTimeout(() => {
+                if (popup.parentNode) {
+                    document.body.removeChild(popup);
+                }
+            }, 3000);
+            
+            playSound(1000, 0.2, 'triangle', 0.1);
+        }
+
+        // Check achievements
+        function checkAchievements() {
+            gameState.achievements.forEach(achievement => {
+                if (!achievement.unlocked && typeof achievement.condition === 'function' && achievement.condition()) {
+                    achievement.unlocked = true;
+                    showAchievement(achievement);
+                    hackerReactToEvent('achievement');
+                }
+            });
+        }
+
+        // Calculate packets per second
+        function calculatePacketsPerSecond() {
+            let total = 0;
+            
+            // Calculate base production from nodes
+            Object.keys(gameState.nodes).forEach(nodeKey => {
+                const node = gameState.nodes[nodeKey];
+                let production = node.count * node.baseProduction;
+                
+                // Apply node-specific upgrades
+                const nodeUpgrades = gameState.nodeUpgrades.filter(u => u.bought && u.nodeType === nodeKey);
+                nodeUpgrades.forEach(upgrade => {
+                    if (upgrade.multiplier) {
+                        production *= upgrade.multiplier;
+                    }
+                });
+                
+                total += production;
+            });
+            
+            // Apply global multipliers
+            let globalMultiplier = 1;
+            
+            // Global upgrade multipliers
+            gameState.globalUpgrades.filter(u => u.bought && u.multiplier).forEach(upgrade => {
+                globalMultiplier *= upgrade.multiplier;
+            });
+            
+            // Special click upgrades that affect production
+            gameState.clickUpgrades.filter(u => u.bought && u.id.startsWith('special')).forEach(upgrade => {
+                const multiplier = {
+                    'special1': 1.1,
+                    'special2': 1.25,
+                    'special3': 1.5,
+                    'special4': 2,
+                    'special5': 6
+                }[upgrade.id] || 1;
+                globalMultiplier *= multiplier;
+            });
+            
+            // Prestige multiplier from encryption keys
+            let prestigeMultiplier = 1 + (gameState.encryptionKeys * 0.1);
+            
+            // Prestige boost upgrades
+            gameState.globalUpgrades.filter(u => u.bought && u.prestigeBonus).forEach(upgrade => {
+                prestigeMultiplier *= (1 + upgrade.prestigeBonus);
+            });
+            
+            // Synergy effects
+            if (gameState.clickUpgrades.find(u => u.id === 'synergy1' && u.bought)) {
+                const nodeTypesOwned = Object.keys(gameState.nodes).filter(key => gameState.nodes[key].count > 0).length;
+                globalMultiplier *= Math.pow(1.01, nodeTypesOwned);
+            }
+            
+            if (gameState.clickUpgrades.find(u => u.id === 'synergy2' && u.bought)) {
+                const totalNodes = getTotalNodes();
+                globalMultiplier *= Math.pow(1.05, Math.floor(totalNodes / 10));
+            }
+            
+            if (gameState.clickUpgrades.find(u => u.id === 'synergy3' && u.bought)) {
+                const totalNodes = getTotalNodes();
+                globalMultiplier *= Math.pow(1.1, Math.floor(totalNodes / 100));
+            }
+            
+            if (gameState.clickUpgrades.find(u => u.id === 'synergy4' && u.bought)) {
+                const totalNodes = getTotalNodes();
+                globalMultiplier *= Math.pow(1.25, Math.floor(totalNodes / 1000));
+            }
+            
+            if (gameState.clickUpgrades.find(u => u.id === 'synergy5' && u.bought)) {
+                const totalNodes = getTotalNodes();
+                globalMultiplier *= Math.pow(2, Math.floor(totalNodes / 10000));
+            }
+            
+            return total * globalMultiplier * prestigeMultiplier;
+        }
+
+        // Calculate prestige gain
+        function calculatePrestigeGain() {
+            const baseThreshold = 100000 * Math.pow(2, gameState.totalResets);
+            if (gameState.totalPacketsEarned < baseThreshold) return 0;
+            return Math.floor(Math.sqrt(gameState.totalPacketsEarned / baseThreshold)) + Math.max(1, gameState.totalResets);
+        }
+
+        // Handle prestige
+        function handlePrestige() {
+            if (gameState.nextPrestigeGain > 0) {
+                playSound(400, 0.5, 'sawtooth', 0.1);
+                
+                // Perform prestige
+                gameState.encryptionKeys += gameState.nextPrestigeGain;
+                gameState.totalResets++;
+                
+                // Reset most progress
+                gameState.packets = 0;
+                gameState.malwareScripts = 0;
+                gameState.clickPower = 1;
+                gameState.packetsPerSecond = 0;
+                gameState.totalPacketsEarned = 0;
+                
+                // Reset nodes
+                Object.keys(gameState.nodes).forEach(nodeKey => {
+                    gameState.nodes[nodeKey].count = 0;
+                    gameState.nodes[nodeKey].cost = gameState.nodes[nodeKey].baseCost;
+                });
+                
+                // Reset upgrades (except prestige upgrades)
+                gameState.clickUpgrades.forEach(u => u.bought = false);
+                gameState.nodeUpgrades.forEach(u => u.bought = false);
+                
+                // Reset some global upgrades (keep prestige upgrades)
+                gameState.globalUpgrades.forEach(u => {
+                    if (!u.id.startsWith('prestige')) {
+                        u.bought = false;
+                    }
+                });
+                
+                // Reset achievements except prestige ones
+                gameState.achievements.forEach(achievement => {
+                    if (!achievement.id.includes('prestige') && achievement.id !== 'first_prestige') {
+                        achievement.unlocked = false;
+                    }
+                });
+                
+                showClickEffect(`SYSTEM REBOOT! +${gameState.nextPrestigeGain} Keys`, '#ff00ff');
+                hackerReactToEvent('prestige');
+                checkAchievements();
+                saveGame();
+                renderUI();
+            }
+        }
+
+        // Buy node
+        function buyNode(nodeKey) {
+            const node = gameState.nodes[nodeKey];
+            if (gameState.packets >= node.cost) {
+                playSound(500, 0.1, 'triangle', 0.08);
+                
+                gameState.packets -= node.cost;
+                node.count++;
+                
+                // Apply cost reduction upgrades
+                let costMultiplier = 1.15;
+                const costReductions = gameState.nodeUpgrades
+                    .filter(u => u.bought && u.nodeType === nodeKey && u.costReduction)
+                    .reduce((total, u) => total + u.costReduction, 0);
+                
+                node.cost = Math.floor(node.baseCost * Math.pow(costMultiplier, node.count) * (1 - Math.min(costReductions, 0.9)));
+                
+                showClickEffect(`+1 ${nodeTypes[nodeKey].name}`, '#00aaff');
+                checkAchievements();
+                updateBotnetVisualization();
+                renderNodes();
+            }
+        }
+
+        // Buy upgrade
+        function buyUpgrade(upgrade) {
+            const cost = getUpgradeCost(upgrade);
+            console.log(`Trying to buy ${upgrade.name}: cost=${cost}, packets=${gameState.packets}, bought=${upgrade.bought}`);
+            
+            if (gameState.packets >= cost && !upgrade.bought) {
+                playSound(700, 0.15, 'triangle', 0.08);
+                
+                gameState.packets -= cost;
+                upgrade.bought = true;
+                
+                showClickEffect(`Upgrade: ${upgrade.name}`, '#ffaa00');
+                hackerReactToEvent('upgrade');
+                checkAchievements();
+                saveGame();
+                
+                // Force full UI update
+                setTimeout(() => {
+                    renderUpgrades();
+                    updateDisplay();
+                }, 100);
+            } else {
+                console.log(`Cannot afford upgrade: ${upgrade.name}`);
+            }
+        }
+
+        // Get upgrade cost with reductions
+        function getUpgradeCost(upgrade) {
+            if (upgrade.bought) return 0;
+            
+            let cost = upgrade.cost;
+            
+            // Apply cost reduction upgrades
+            const costReductions = gameState.globalUpgrades
+                .filter(u => u.bought && u.costReduction)
+                .reduce((total, u) => total + u.costReduction, 0);
+            
+            cost *= (1 - Math.min(costReductions, 0.9)); // Cap at 90% reduction
+            
+            return Math.floor(cost);
+        }
+
+        // Update display
+        function updateDisplay() {
+            document.getElementById('packets-display').textContent = formatNumber(gameState.packets);
+            document.getElementById('pps-display').textContent = formatNumber(gameState.packetsPerSecond);
+            document.getElementById('malware-display').textContent = formatNumber(gameState.malwareScripts);
+            document.getElementById('keys-display').textContent = formatNumber(gameState.encryptionKeys);
+            document.getElementById('click-power-display').textContent = formatNumber(gameState.clickPower);
+            document.getElementById('resets-display').textContent = gameState.totalResets;
+            document.getElementById('prestige-gain-display').textContent = gameState.nextPrestigeGain;
+            
+            // Update live packet counter
+            const livePackets = document.getElementById('live-packets');
+            if (livePackets) {
+                livePackets.textContent = formatNumber(gameState.packets);
+            }
+            
+            // Update prestige button
+            const prestigeBtn = document.getElementById('prestige-btn');
+            const prestigeThreshold = 100000 * Math.pow(2, gameState.totalResets);
+            if (gameState.nextPrestigeGain > 0) {
+                prestigeBtn.disabled = false;
+                prestigeBtn.textContent = `PRESTIGE (+${gameState.nextPrestigeGain} Keys)`;
+            } else {
+                prestigeBtn.disabled = true;
+                prestigeBtn.textContent = `PRESTIGE (Need ${formatNumber(prestigeThreshold)})`;
+            }
+        }
+
+        // Update botnet visualization
+        function updateBotnetVisualization() {
+            const container = document.getElementById('botnet-nodes');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            let totalIcons = 0;
+            const maxIcons = 60; // Maximum icons to prevent overflow
+            
+            Object.keys(gameState.nodes).forEach(nodeKey => {
+                const node = gameState.nodes[nodeKey];
+                const nodeType = nodeTypes[nodeKey];
+                
+                if (node.count > 0 && totalIcons < maxIcons) {
+                    const iconsToShow = Math.min(node.count, maxIcons - totalIcons, 10);
+                    
+                    for (let i = 0; i < iconsToShow; i++) {
+                        const nodeIcon = document.createElement('div');
+                        nodeIcon.className = 'node-icon';
+                        nodeIcon.textContent = nodeType.icon;
+                        nodeIcon.title = `${nodeType.name}: ${node.count}`;
+                        container.appendChild(nodeIcon);
+                        totalIcons++;
+                    }
+                    
+                    // Add a count indicator if there are more nodes than shown
+                    if (node.count > iconsToShow) {
+                        const countIndicator = document.createElement('div');
+                        countIndicator.className = 'node-icon';
+                        countIndicator.textContent = `+${node.count - iconsToShow}`;
+                        countIndicator.title = `${nodeType.name}: ${node.count} total`;
+                        countIndicator.style.fontSize = '8px';
+                        countIndicator.style.background = 'rgba(0, 255, 255, 0.3)';
+                        container.appendChild(countIndicator);
+                        totalIcons++;
+                    }
+                }
+            });
+        }
+
+        // Render UI
+        function renderUI() {
+            renderNodes();
+            renderUpgrades();
+            renderLeaderboard();
+            renderAchievements();
+            updateBotnetVisualization();
+            updateDisplay();
+        }
+
+        // Render nodes
+        function renderNodes() {
+            const container = document.getElementById('nodes-container');
+            container.innerHTML = '';
+            
+            Object.keys(nodeTypes).forEach(nodeKey => {
+                const nodeType = nodeTypes[nodeKey];
+                const node = gameState.nodes[nodeKey];
+                
+                const button = document.createElement('button');
+                button.className = 'node-button';
+                button.disabled = gameState.packets < node.cost;
+                button.onclick = () => buyNode(nodeKey);
+                
+                const production = node.count * node.baseProduction;
+                const totalProduction = production * getNodeMultiplier(nodeKey);
+                
+                button.innerHTML = `
+                    <div class="upgrade-name">${nodeType.icon} ${nodeType.name}</div>
+                    <div class="upgrade-cost">${formatNumber(node.cost)} packets</div>
+                    <div class="upgrade-description">
+                        Owned: ${node.count} | Production: ${formatNumber(totalProduction)}/sec<br>
+                        ${nodeType.description}
+                    </div>
+                `;
+                
+                container.appendChild(button);
+            });
+        }
+
+        // Get node multiplier
+        function getNodeMultiplier(nodeKey) {
+            let multiplier = 1;
+            
+            // Node-specific upgrades
+            const nodeUpgrades = gameState.nodeUpgrades.filter(u => u.bought && u.nodeType === nodeKey && u.multiplier);
+            nodeUpgrades.forEach(upgrade => {
+                multiplier *= upgrade.multiplier;
+            });
+            
+            // Global multipliers
+            gameState.globalUpgrades.filter(u => u.bought && u.multiplier).forEach(upgrade => {
+                multiplier *= upgrade.multiplier;
+            });
+            
+            // Prestige multiplier
+            multiplier *= (1 + gameState.encryptionKeys * 0.1);
+            
+            return multiplier;
+        }
+
+        // Render upgrades
+        function renderUpgrades() {
+            renderUpgradeSection('click-upgrades', 'CLICK UPGRADES', gameState.clickUpgrades);
+            renderUpgradeSection('node-upgrades', 'NODE UPGRADES', gameState.nodeUpgrades);
+            renderUpgradeSection('global-upgrades', 'GLOBAL UPGRADES', gameState.globalUpgrades);
+        }
+
+        // Render upgrade section
+        function renderUpgradeSection(containerId, title, upgrades) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            container.innerHTML = `<div class="section-title">${title}</div>`;
+            
+            // Sort upgrades by cost (available first, then by ascending cost)
+            const sortedUpgrades = [...upgrades].sort((a, b) => {
+                if (a.bought && !b.bought) return 1;
+                if (!a.bought && b.bought) return -1;
+                if (a.bought && b.bought) return 0;
+                return getUpgradeCost(a) - getUpgradeCost(b);
+            });
+            
+            sortedUpgrades.forEach(upgrade => {
+                const button = document.createElement('button');
+                button.className = 'upgrade-button';
+                const cost = getUpgradeCost(upgrade);
+                const canAfford = gameState.packets >= cost;
+                
+                button.disabled = upgrade.bought || !canAfford;
+                button.onclick = () => {
+                    console.log(`Clicked upgrade ${upgrade.name}: bought=${upgrade.bought}, canAfford=${canAfford}, cost=${cost}, packets=${gameState.packets}`);
+                    if (!upgrade.bought && canAfford) {
+                        buyUpgrade(upgrade);
+                    }
+                };
+                
+                const statusText = upgrade.bought ? '[PURCHASED]' : `${formatNumber(cost)} packets`;
+                const buttonClass = upgrade.bought ? 'purchased' : (canAfford ? 'affordable' : 'unaffordable');
+                
+                button.innerHTML = `
+                    <div class="upgrade-name">${upgrade.name}</div>
+                    <div class="upgrade-cost ${buttonClass}">${statusText}</div>
+                    <div class="upgrade-description">${upgrade.description}</div>
+                `;
+                
+                container.appendChild(button);
+            });
+        }
+
+        // Render leaderboard
+        function renderLeaderboard() {
+            const container = document.getElementById('leaderboard-container');
+            container.innerHTML = '';
+            
+            // Add player to fake leaderboard
+            const playerEntry = {
+                name: 'YOU',
+                packets: gameState.totalPacketsEarned,
+                pps: gameState.packetsPerSecond
+            };
+            
+            const allEntries = [...fakeHackers, playerEntry].sort((a, b) => b.packets - a.packets);
+            
+            allEntries.slice(0, 10).forEach((entry, index) => {
+                const div = document.createElement('div');
+                div.className = 'leaderboard-entry' + (entry.name === 'YOU' ? ' current-player' : '');
+                
+                div.innerHTML = `
+                    <span>#${index + 1} ${entry.name}</span>
+                    <span>${formatNumber(entry.packets)}</span>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+
+        // Render achievements
+        function renderAchievements() {
+            const container = document.getElementById('achievements-container');
+            container.innerHTML = '';
+            
+            gameState.achievements.forEach(achievement => {
+                const div = document.createElement('div');
+                div.className = 'achievement-item' + (achievement.unlocked ? ' unlocked' : '');
+                
+                div.innerHTML = `
+                    <div>
+                        <div class="achievement-name">${achievement.unlocked ? '🏆' : '🔒'} ${achievement.name}</div>
+                        <div class="upgrade-description">${achievement.description}</div>
+                    </div>
+                    <div>${achievement.unlocked ? 'COMPLETED' : 'LOCKED'}</div>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+
+        // Toggle panels
+        function toggleSettings() {
+            const panel = document.getElementById('settings-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleAchievements() {
+            const panel = document.getElementById('achievements-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleCustomization() {
+            const panel = document.getElementById('customization-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Customization functions
+        function changeTheme() {
+            const theme = document.getElementById('theme-select').value;
+            const root = document.documentElement;
+            
+            switch(theme) {
+                case 'blue':
+                    root.style.setProperty('--primary-color', '#0088ff');
+                    root.style.setProperty('--primary-glow', '0, 136, 255');
+                    root.style.setProperty('--secondary-color', '#0066cc');
+                    break;
+                case 'red':
+                    root.style.setProperty('--primary-color', '#ff0044');
+                    root.style.setProperty('--primary-glow', '255, 0, 68');
+                    root.style.setProperty('--secondary-color', '#cc0033');
+                    break;
+                case 'purple':
+                    root.style.setProperty('--primary-color', '#8844ff');
+                    root.style.setProperty('--primary-glow', '136, 68, 255');
+                    root.style.setProperty('--secondary-color', '#6633cc');
+                    break;
+                default: // green
+                    root.style.setProperty('--primary-color', '#00ff00');
+                    root.style.setProperty('--primary-glow', '0, 255, 0');
+                    root.style.setProperty('--secondary-color', '#00aaaa');
+            }
+            
+            gameSettings.theme = theme;
+            saveSettings();
+        }
+
+        function changeAnimationSpeed() {
+            const speed = document.getElementById('animation-select').value;
+            document.querySelectorAll('.node-icon').forEach(icon => {
+                icon.style.animationDuration = speed === 'fast' ? '1s' : speed === 'slow' ? '4s' : '2s';
+            });
+            
+            // Update hackerman animation too
+            const hackerman = document.getElementById('hackerman');
+            if (hackerman) {
+                hackerman.style.animationDuration = speed === 'fast' ? '1s' : speed === 'slow' ? '4s' : '2s';
+            }
+            
+            gameSettings.animationSpeed = speed;
+            saveSettings();
+        }
+        
+        function changeNumberFormat() {
+            const format = document.getElementById('number-format-select').value;
+            gameSettings.numberFormat = format;
+            console.log('Number format changed to:', format);
+            saveSettings();
+            updateDisplay();
+        }
+
+
+
+        function toggleScreenEffects() {
+            gameSettings.screenEffects = !gameSettings.screenEffects;
+            document.getElementById('screen-effects-toggle').classList.toggle('active', gameSettings.screenEffects);
+            saveSettings();
+        }
+
+        // Settings functions
+        function toggleSfx() {
+            gameSettings.soundEffects = !gameSettings.soundEffects;
+            document.getElementById('sfx-toggle').classList.toggle('active', gameSettings.soundEffects);
+            saveSettings();
+        }
+
+        function toggleMusic() {
+            gameSettings.backgroundMusic = !gameSettings.backgroundMusic;
+            document.getElementById('music-toggle').classList.toggle('active', gameSettings.backgroundMusic);
+            if (gameSettings.backgroundMusic && audioInitialized) {
+                startBackgroundMusic();
+            }
+            saveSettings();
+        }
+
+        function toggleEffects() {
+            gameSettings.clickEffects = !gameSettings.clickEffects;
+            document.getElementById('effects-toggle').classList.toggle('active', gameSettings.clickEffects);
+            saveSettings();
+        }
+
+        function toggleAutoSave() {
+            gameSettings.autoSave = !gameSettings.autoSave;
+            document.getElementById('autosave-toggle').classList.toggle('active', gameSettings.autoSave);
+            saveSettings();
+        }
+
+        function exportSave() {
+            const saveData = JSON.stringify(gameState);
+            const blob = new Blob([saveData], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'botnet-billionaire-save.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importSave() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.txt';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const loadedState = JSON.parse(e.target.result);
+                            Object.keys(loadedState).forEach(key => {
+                                if (key in gameState) {
+                                    gameState[key] = loadedState[key];
+                                }
+                            });
+                            renderUI();
+                            alert('Save imported successfully!');
+                        } catch (error) {
+                            alert('Invalid save file!');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        function resetGame() {
+            if (confirm('Are you sure you want to reset all progress? This cannot be undone!')) {
+                localStorage.removeItem('botnetBillionaire');
+                localStorage.removeItem('botnetBillionaireSettings');
+                location.reload();
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            const now = Date.now();
+            const deltaTime = (now - gameState.lastUpdate) / 1000;
+            gameState.lastUpdate = now;
+            
+            // Calculate packets per second
+            gameState.packetsPerSecond = calculatePacketsPerSecond();
+            
+            // Add packets from passive income
+            if (gameState.packetsPerSecond > 0) {
+                const packetsGained = gameState.packetsPerSecond * deltaTime;
+                gameState.packets += packetsGained;
+                gameState.totalPacketsEarned += packetsGained;
+            }
+            
+            // Auto-clicking
+            let autoClicksPerSecond = 0;
+            if (gameState.clickUpgrades.find(u => u.id === 'autoclick1' && u.bought)) autoClicksPerSecond += 1;
+            if (gameState.clickUpgrades.find(u => u.id === 'autoclick2' && u.bought)) autoClicksPerSecond += 5;
+            if (gameState.clickUpgrades.find(u => u.id === 'autoclick3' && u.bought)) autoClicksPerSecond += 10;
+            if (gameState.clickUpgrades.find(u => u.id === 'autoclick4' && u.bought)) autoClicksPerSecond += 25;
+            if (gameState.clickUpgrades.find(u => u.id === 'autoclick5' && u.bought)) autoClicksPerSecond += 100;
+            
+            if (autoClicksPerSecond > 0) {
+                const currentClickPower = calculateClickPower();
+                const autoPackets = autoClicksPerSecond * currentClickPower * deltaTime;
+                gameState.packets += autoPackets;
+                gameState.totalPacketsEarned += autoPackets;
+            }
+            
+            // Generate malware scripts
+            gameState.globalUpgrades.filter(u => u.bought && u.scriptGen).forEach(upgrade => {
+                const scriptsGained = gameState.packetsPerSecond * upgrade.scriptGen * deltaTime;
+                gameState.malwareScripts += scriptsGained;
+            });
+            
+            // Auto-purchasing
+            if (gameState.globalUpgrades.find(u => u.id === 'automation1' && u.bought) && Math.random() < deltaTime / 30) {
+                autoBuyUpgrade();
+            }
+            if (gameState.globalUpgrades.find(u => u.id === 'automation2' && u.bought) && Math.random() < deltaTime / 10) {
+                autoBuyUpgrade();
+            }
+            if (gameState.globalUpgrades.find(u => u.id === 'automation3' && u.bought) && Math.random() < deltaTime / 5) {
+                autoBuyUpgrade();
+            }
+            
+            // Calculate prestige gain
+            gameState.nextPrestigeGain = calculatePrestigeGain();
+            
+            // Check achievements
+            checkAchievements();
+            
+            // Update hackerman state
+            updateHackerman();
+            
+            // Update display
+            updateDisplay();
+            
+            // Update leaderboard occasionally
+            if (Math.random() < 0.01) {
+                renderLeaderboard();
+            }
+            
+            // Auto-save
+            if (gameSettings.autoSave && now - gameState.lastSave > 10000) {
+                saveGame();
+                gameState.lastSave = now;
+            }
+        }
+
+        // Auto-buy upgrade
+        function autoBuyUpgrade() {
+            const allUpgrades = [
+                ...gameState.clickUpgrades,
+                ...gameState.nodeUpgrades,
+                ...gameState.globalUpgrades
+            ].filter(u => !u.bought && getUpgradeCost(u) <= gameState.packets);
+            
+            if (allUpgrades.length > 0) {
+                const cheapest = allUpgrades.reduce((min, upgrade) => 
+                    getUpgradeCost(upgrade) < getUpgradeCost(min) ? upgrade : min
+                );
+                buyUpgrade(cheapest);
+            }
+        }
+
+        // Save game
+        function saveGame() {
+            if (!gameSettings.autoSave) return;
+            
+            try {
+                localStorage.setItem('botnetBillionaire', JSON.stringify(gameState));
+                console.log('Game saved successfully');
+            } catch (e) {
+                console.error('Failed to save game:', e);
+            }
+        }
+
+        // Save settings
+        function saveSettings() {
+            try {
+                localStorage.setItem('botnetBillionaireSettings', JSON.stringify(gameSettings));
+            } catch (e) {
+                console.error('Failed to save settings:', e);
+            }
+        }
+
+        // Load game
+        function loadGame() {
+            try {
+                const saved = localStorage.getItem('botnetBillionaire');
+                if (saved) {
+                    const loadedState = JSON.parse(saved);
+                    
+                    // Merge saved state with default state (excluding achievements which need special handling)
+                    Object.keys(loadedState).forEach(key => {
+                        if (key in gameState && key !== 'achievements') {
+                            gameState[key] = loadedState[key];
+                        }
+                    });
+                    
+                    // Handle achievements separately to preserve condition functions
+                    if (loadedState.achievements) {
+                        loadedState.achievements.forEach(savedAchievement => {
+                            const defaultAchievement = gameState.achievements.find(a => a.id === savedAchievement.id);
+                            if (defaultAchievement) {
+                                defaultAchievement.unlocked = savedAchievement.unlocked;
+                            }
+                        });
+                    }
+                    
+                    // Handle offline progress (max 24 hours)
+                    const offlineTime = Math.min((Date.now() - gameState.lastUpdate) / 1000, 86400);
+                    if (offlineTime > 60) {
+                        const offlinePackets = calculatePacketsPerSecond() * offlineTime;
+                        gameState.packets += offlinePackets;
+                        gameState.totalPacketsEarned += offlinePackets;
+                        
+                        if (offlinePackets > 0) {
+                            setTimeout(() => {
+                                showClickEffect(`Welcome back! +${formatNumber(offlinePackets)} offline packets`, '#00ffff');
+                            }, 1000);
+                        }
+                    }
+                    
+                    gameState.lastUpdate = Date.now();
+                    console.log('Game loaded successfully');
+                }
+            } catch (e) {
+                console.error('Failed to load game:', e);
+            }
+        }
+
+        // Load settings
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem('botnetBillionaireSettings');
+                if (saved) {
+                    const loadedSettings = JSON.parse(saved);
+                    Object.assign(gameSettings, loadedSettings);
+                    
+                    // Apply loaded theme
+                    if (gameSettings.theme) {
+                        document.getElementById('theme-select').value = gameSettings.theme;
+                        changeTheme();
+                    }
+                    
+                    // Apply loaded animation speed
+                    if (gameSettings.animationSpeed) {
+                        document.getElementById('animation-select').value = gameSettings.animationSpeed;
+                        changeAnimationSpeed();
+                    }
+                    
+                    // Apply loaded number format
+                    if (gameSettings.numberFormat) {
+                        document.getElementById('number-format-select').value = gameSettings.numberFormat;
+                    }
+                    
+                    // Update UI toggles
+                    document.getElementById('sfx-toggle').classList.toggle('active', gameSettings.soundEffects);
+                    document.getElementById('music-toggle').classList.toggle('active', gameSettings.backgroundMusic);
+                    document.getElementById('effects-toggle').classList.toggle('active', gameSettings.clickEffects);
+                    document.getElementById('autosave-toggle').classList.toggle('active', gameSettings.autoSave);
+                    document.getElementById('screen-effects-toggle').classList.toggle('active', gameSettings.screenEffects);
+                }
+            } catch (e) {
+                console.error('Failed to load settings:', e);
+            }
+        }
+
+        // Buy prestige upgrade
+        function buyPrestigeUpgrade(upgrade) {
+            console.log(`Trying to buy prestige upgrade ${upgrade.name}: cost=${upgrade.cost}, keys=${gameState.encryptionKeys}, bought=${upgrade.bought}`);
+            if (gameState.encryptionKeys >= upgrade.cost && !upgrade.bought) {
+                playSound(900, 0.2, 'triangle', 0.1);
+                
+                gameState.encryptionKeys -= upgrade.cost;
+                upgrade.bought = true;
+                
+                showClickEffect(`Prestige: ${upgrade.name}`, '#ff00ff');
+                saveGame();
+                renderPrestigeShop();
+                updateDisplay();
+            } else {
+                console.log(`Cannot buy prestige upgrade: not enough keys or already bought`);
+            }
+        }
+
+        // Render prestige shop
+        function renderPrestigeShop() {
+            const container = document.getElementById('prestige-shop-container');
+            container.innerHTML = '';
+            
+            gameState.prestigeUpgrades.forEach(upgrade => {
+                const button = document.createElement('button');
+                button.className = 'upgrade-button';
+                button.disabled = upgrade.bought || gameState.encryptionKeys < upgrade.cost;
+                button.onclick = () => buyPrestigeUpgrade(upgrade);
+                
+                const statusText = upgrade.bought ? '[OWNED]' : `${upgrade.cost} Keys`;
+                
+                button.innerHTML = `
+                    <div class="upgrade-name">${upgrade.name}</div>
+                    <div class="upgrade-cost">${statusText}</div>
+                    <div class="upgrade-description">${upgrade.description}</div>
+                `;
+                
+                container.appendChild(button);
+            });
+        }
+
+        // Hackerman speech messages
+        const hackermanMessages = {
+            welcome: [
+                "Welcome to the matrix, hacker!",
+                "Time to breach some firewalls!",
+                "Let's build that botnet empire!",
+                "Ready to hack the planet?"
+            ],
+            firstClick: [
+                "Nice! Your first packet!",
+                "The journey begins...",
+                "Good start, rookie!",
+                "I can sense your potential!"
+            ],
+            milestone: [
+                "Impressive packet count!",
+                "You're getting the hang of this!",
+                "The botnet grows stronger!",
+                "Your skills are evolving!",
+                "Excellent progress, hacker!"
+            ],
+            upgrade: [
+                "Smart upgrade choice!",
+                "Your efficiency increases!",
+                "Now we're talking!",
+                "Optimization is key!",
+                "Brilliant strategy!"
+            ],
+            prestige: [
+                "System reboot complete!",
+                "Your knowledge persists!",
+                "Ready for the next level!",
+                "Encryption keys secured!",
+                "The cycle continues..."
+            ],
+            achievement: [
+                "Achievement unlocked!",
+                "You've mastered this skill!",
+                "Another milestone reached!",
+                "Your reputation grows!",
+                "Legendary status approaching!"
+            ],
+            idle: [
+                "Click me for tips!",
+                "I'm monitoring your progress...",
+                "The network awaits...",
+                "Ready when you are!",
+                "Scanning for opportunities..."
+            ],
+            encouragement: [
+                "Don't give up, hacker!",
+                "Every expert was once a beginner!",
+                "Keep building that empire!",
+                "The packets will flow!",
+                "Trust the process!"
+            ]
+        };
+
+        // Update hackerman based on game state
+        function updateHackerman() {
+            const now = Date.now();
+            const face = document.getElementById('hackerman-face');
+            const status = document.getElementById('hackerman-status');
+            const character = document.getElementById('hackerman');
+            
+            // Determine mood based on progress
+            const packetGrowth = gameState.packets - hackermanState.lastPackets;
+            const nodeGrowth = getTotalNodes() - hackermanState.lastNodes;
+            
+            let newMood = 'neutral';
+            let newExpression = '🤖';
+            let statusText = 'Watching...';
+            
+            // Mood and expression logic
+            if (gameState.packetsPerSecond > 1000000) {
+                newMood = 'amazed';
+                newExpression = '🤯';
+                statusText = 'INCREDIBLE!';
+            } else if (gameState.packetsPerSecond > 100000) {
+                newMood = 'impressed';
+                newExpression = '😎';
+                statusText = 'Impressive!';
+            } else if (gameState.packetsPerSecond > 10000) {
+                newMood = 'happy';
+                newExpression = '😄';
+                statusText = 'Great work!';
+            } else if (gameState.packetsPerSecond > 1000) {
+                newMood = 'pleased';
+                newExpression = '😊';
+                statusText = 'Nice progress!';
+            } else if (gameState.packetsPerSecond > 100) {
+                newMood = 'encouraging';
+                newExpression = '🙂';
+                statusText = 'Getting there!';
+            } else if (gameState.packetsPerSecond > 10) {
+                newMood = 'neutral';
+                newExpression = '🤖';
+                statusText = 'Building...';
+            } else if (gameState.packets === 0) {
+                newMood = 'waiting';
+                newExpression = '👀';
+                statusText = 'Waiting...';
+            }
+            
+            // Special expressions for specific events
+            if (packetGrowth > 10000) {
+                newExpression = '🚀';
+                statusText = 'WOAH!';
+                character.classList.add('hackerman-excited');
+                setTimeout(() => character.classList.remove('hackerman-excited'), 1000);
+            } else if (nodeGrowth > 0) {
+                newExpression = '👍';
+                statusText = 'Node added!';
+            }
+            
+            // Update face and status if changed
+            if (newExpression !== hackermanState.currentExpression) {
+                face.textContent = newExpression;
+                hackermanState.currentExpression = newExpression;
+            }
+            
+            status.textContent = statusText;
+            hackermanState.mood = newMood;
+            hackermanState.lastPackets = gameState.packets;
+            hackermanState.lastNodes = getTotalNodes();
+        }
+
+        // Make hackerman speak
+        function hackerSpeak(message) {
+            const speechBubble = document.getElementById('hackerman-speech');
+            const now = Date.now();
+            
+            if (now - hackermanState.lastSpeech < hackermanState.speechCooldown) return;
+            
+            speechBubble.textContent = message;
+            speechBubble.style.opacity = '1';
+            speechBubble.style.animation = 'speechBubble 3s ease-in-out';
+            
+            hackermanState.lastSpeech = now;
+            
+            setTimeout(() => {
+                speechBubble.style.opacity = '0';
+            }, 3000);
+        }
+
+        // Interact with hackerman
+        function interactWithHackerman() {
+            const character = document.getElementById('hackerman');
+            
+            // Play interaction sound
+            playSound(800, 0.1, 'sine', 0.08);
+            
+            // Add celebration animation
+            character.classList.add('hackerman-celebrating');
+            setTimeout(() => character.classList.remove('hackerman-celebrating'), 2000);
+            
+            // Choose appropriate message
+            let messageCategory = 'idle';
+            
+            if (gameState.packets === 0) {
+                messageCategory = 'welcome';
+            } else if (gameState.totalPacketsEarned < 100) {
+                messageCategory = 'encouragement';
+            } else if (gameState.packetsPerSecond > 100000) {
+                messageCategory = 'milestone';
+            } else {
+                messageCategory = Math.random() < 0.3 ? 'milestone' : 'idle';
+            }
+            
+            const messages = hackermanMessages[messageCategory];
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            
+            hackerSpeak(randomMessage);
+        }
+
+        // Hackerman reactions to game events
+        function hackerReactToEvent(eventType, data = {}) {
+            const character = document.getElementById('hackerman');
+            
+            switch(eventType) {
+                case 'firstClick':
+                    if (gameState.totalPacketsEarned === 1) {
+                        hackerSpeak(hackermanMessages.firstClick[Math.floor(Math.random() * hackermanMessages.firstClick.length)]);
+                        character.classList.add('hackerman-excited');
+                        setTimeout(() => character.classList.remove('hackerman-excited'), 1000);
+                    }
+                    break;
+                    
+                case 'upgrade':
+                    if (Math.random() < 0.3) { // 30% chance to react
+                        hackerSpeak(hackermanMessages.upgrade[Math.floor(Math.random() * hackermanMessages.upgrade.length)]);
+                    }
+                    break;
+                    
+                case 'prestige':
+                    hackerSpeak(hackermanMessages.prestige[Math.floor(Math.random() * hackermanMessages.prestige.length)]);
+                    character.classList.add('hackerman-celebrating');
+                    setTimeout(() => character.classList.remove('hackerman-celebrating'), 2000);
+                    break;
+                    
+                case 'achievement':
+                    hackerSpeak(hackermanMessages.achievement[Math.floor(Math.random() * hackermanMessages.achievement.length)]);
+                    character.classList.add('hackerman-excited');
+                    setTimeout(() => character.classList.remove('hackerman-excited'), 1000);
+                    break;
+                    
+                case 'milestone':
+                    hackerSpeak(data.message || hackermanMessages.milestone[Math.floor(Math.random() * hackermanMessages.milestone.length)]);
+                    break;
+            }
+        }
+
+        // Update fake leaderboard with live changes
+        function updateFakeLeaderboard() {
+            fakeHackers.forEach(hacker => {
+                // Small random increases to simulate active players
+                const increase = Math.random() * hacker.pps * 0.1;
+                hacker.packets += increase;
+                hacker.pps += Math.random() * 1000; // Small pps increases
+            });
+        }
+
+        // Initialize game
+        function initGame() {
+            console.log('Botnet Billionaire loaded! Ready to hack the planet!');
+            
+            initializePrestigeUpgrades();
+            initializeUpgrades();
+            initializeAchievements();
+            loadGame();
+            loadSettings();
+            
+            // Setup hack button event listener
+            const hackBtn = document.getElementById('hack-btn');
+            if (hackBtn) {
+                hackBtn.addEventListener('click', handleHackClick, { passive: false });
+                hackBtn.addEventListener('touchstart', handleHackClick, { passive: false });
+                hackBtn.style.pointerEvents = 'auto';
+                hackBtn.style.userSelect = 'none';
+            }
+            
+            // Initial render
+            renderUI();
+            renderPrestigeShop();
+            
+            // Welcome message from hackerman after a short delay
+            setTimeout(() => {
+                if (gameState.totalPacketsEarned === 0) {
+                    hackerSpeak("Welcome to the matrix, hacker! Click the HACK button to begin your journey!");
+                }
+            }, 2000);
+            
+            // Start game loop
+            setInterval(gameLoop, 50); // 20 FPS
+            
+            // Update fake leaderboard every 5 seconds
+            setInterval(updateFakeLeaderboard, 5000);
+            
+            // Update leaderboard display every 10 seconds
+            setInterval(renderLeaderboard, 10000);
+            
+            console.log('Botnet Billionaire initialized! Click to hack and build your botnet empire!');
+        }
+
+        // Terminal background animation
+        function initTerminalBackground() {
+            const bg = document.getElementById('terminal-bg');
+            const terminalCommands = [
+                'root@botnet:~# nmap -sS 192.168.1.0/24',
+                'root@botnet:~# sqlmap -u "http://target.com/login.php" --dbs',
+                'root@botnet:~# msfconsole -x "use exploit/multi/handler"',
+                'root@botnet:~# hydra -l admin -P passwords.txt ssh://target.com',
+                'root@botnet:~# nc -lvp 4444',
+                'root@botnet:~# python3 exploit.py --target 10.0.0.1',
+                'root@botnet:~# wget https://github.com/exploit/payload.sh',
+                'root@botnet:~# chmod +x payload.sh && ./payload.sh',
+                'root@botnet:~# john --wordlist=rockyou.txt hash.txt',
+                'root@botnet:~# aircrack-ng -w wordlist.txt capture.cap',
+                'root@botnet:~# nikto -h https://target.com',
+                'root@botnet:~# gobuster dir -u https://target.com',
+                'root@botnet:~# hashcat -m 0 -a 0 hashes.txt rockyou.txt',
+                'exploit@botnet:~$ grep -r "password" /var/www/html/',
+                'exploit@botnet:~$ find / -name "*.key" -type f 2>/dev/null',
+                'exploit@botnet:~$ netstat -tulpn | grep LISTEN',
+                'hacker@botnet:~$ ssh -L 8080:localhost:80 user@target.com',
+                'hacker@botnet:~$ tcpdump -i eth0 -w capture.pcap',
+                'hacker@botnet:~$ python3 -m http.server 8000',
+                'hacker@botnet:~$ openssl s_client -connect target.com:443',
+            ];
+            
+            function createTerminalLine() {
+                const line = document.createElement('div');
+                line.className = 'terminal-line';
+                line.textContent = terminalCommands[Math.floor(Math.random() * terminalCommands.length)];
+                line.style.top = Math.random() * 100 + '%';
+                line.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                line.style.animationDelay = Math.random() * 5 + 's';
+                bg.appendChild(line);
+                
+                setTimeout(() => {
+                    if (line.parentNode) {
+                        line.parentNode.removeChild(line);
+                    }
+                }, 20000);
+            }
+            
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => createTerminalLine(), i * 2000);
+            }
+            
+            setInterval(createTerminalLine, 3000);
+        }
+
+        // Start the game when page loads
+        window.addEventListener('load', () => {
+            initGame();
+            initTerminalBackground();
+        });
+        
+        // Initialize audio on first click
+        document.addEventListener('click', initAudio, { once: true });
+        // Initialize player profile system
+        function initializePlayerProfile() {
+            if (!gameState.playerProfile) {
+                gameState.playerProfile = {
+                    name: 'Anonymous',
+                    avatar: '💀',
+                    reputation: 0,
+                    rank: 'Noob',
+                    totalClicks: 0,
+                    upgradesPurchased: 0,
+                    nodesPurchased: 0,
+                    prestigeUpgradesPurchased: 0
+                };
+            }
+            if (!gameState.progress) {
+                gameState.progress = {
+                    totalUpgrades: 0,
+                    completedAchievements: 0,
+                    overallProgress: 0
+                };
+            }
+        }
+
+        // Avatar cycling function
+        function cycleAvatar() {
+            if (!gameState.playerProfile) initializePlayerProfile();
+            const avatars = ['💀', '🤖', '👾', '🕷️', '🔥', '⚡', '🌐', '🗿', '😈', '🎭', '🦾', '🔮', '👹', '🎪'];
+            const currentIndex = avatars.indexOf(gameState.playerProfile.avatar);
+            const nextIndex = (currentIndex + 1) % avatars.length;
+            gameState.playerProfile.avatar = avatars[nextIndex];
+            document.getElementById('player-avatar').textContent = gameState.playerProfile.avatar;
+            updateReputation(5);
+            updateLeaderboard();
+            saveGame();
+        }
+
+        // Change player name
+        function changePlayerName() {
+            if (!gameState.playerProfile) initializePlayerProfile();
+            const newName = prompt('Enter your hacker name:', gameState.playerProfile.name);
+            if (newName && newName.trim() && newName.trim() !== gameState.playerProfile.name) {
+                gameState.playerProfile.name = newName.trim();
+                document.getElementById('player-name').textContent = gameState.playerProfile.name;
+                updateReputation(10);
+                updateLeaderboard();
+                saveGame();
+            }
+        }
+
+        // Enhanced reputation system
+        function updateReputation(amount) {
+            if (!gameState.playerProfile) initializePlayerProfile();
+            
+            gameState.playerProfile.reputation += amount;
+            
+            // Calculate rank based on reputation with more tiers
+            const ranks = [
+                { min: 0, name: 'Noob', color: '#888888' },
+                { min: 100, name: 'Script Kiddie', color: '#ffaa00' },
+                { min: 500, name: 'Junior Hacker', color: '#00aaff' },
+                { min: 1500, name: 'Skilled Hacker', color: '#00ff00' },
+                { min: 5000, name: 'Expert Hacker', color: '#ff00ff' },
+                { min: 15000, name: 'Elite Hacker', color: '#ffff00' },
+                { min: 50000, name: 'Master Hacker', color: '#ff6600' },
+                { min: 150000, name: 'Legendary Hacker', color: '#ff0066' },
+                { min: 500000, name: 'Cyber Overlord', color: '#9900ff' },
+                { min: 1000000, name: 'Digital God', color: '#ff0000' }
+            ];
+            
+            const currentRank = ranks.reverse().find(rank => gameState.playerProfile.reputation >= rank.min);
+            if (currentRank) {
+                gameState.playerProfile.rank = currentRank.name;
+                const rankElement = document.getElementById('rank-display');
+                if (rankElement) {
+                    rankElement.style.color = currentRank.color;
+                }
+            }
+        }
+
+        // Update player profile display
+        function updatePlayerProfile() {
+            if (!gameState.playerProfile) initializePlayerProfile();
+            
+            const avatarEl = document.getElementById('player-avatar');
+            const nameEl = document.getElementById('player-name');
+            const repEl = document.getElementById('reputation-display');
+            const rankEl = document.getElementById('rank-display');
+            const progressEl = document.getElementById('progress-display');
+            
+            if (avatarEl) avatarEl.textContent = gameState.playerProfile.avatar;
+            if (nameEl) nameEl.textContent = gameState.playerProfile.name;
+            if (repEl) repEl.textContent = formatNumber(gameState.playerProfile.reputation);
+            if (rankEl) rankEl.textContent = gameState.playerProfile.rank;
+            
+            // Calculate overall progress
+            const totalPossibleUpgrades = gameState.clickUpgrades.length + gameState.nodeUpgrades.length + gameState.globalUpgrades.length + gameState.prestigeUpgrades.length;
+            const purchasedUpgrades = [...gameState.clickUpgrades, ...gameState.nodeUpgrades, ...gameState.globalUpgrades, ...gameState.prestigeUpgrades].filter(u => u.bought).length;
+            const progress = totalPossibleUpgrades > 0 ? Math.floor((purchasedUpgrades / totalPossibleUpgrades) * 100) : 0;
+            
+            if (progressEl) progressEl.textContent = `${progress}%`;
+        }
+
+        // Enhanced leaderboard with live positioning
+        function updateLeaderboard() {
+            const container = document.getElementById('leaderboard-container');
+            if (!container) return;
+            
+            if (!gameState.playerProfile) initializePlayerProfile();
+            
+            // Create player entry
+            const playerEntry = {
+                name: gameState.playerProfile.name,
+                packets: gameState.packets,
+                pps: gameState.packetsPerSecond,
+                isPlayer: true,
+                avatar: gameState.playerProfile.avatar
+            };
+            
+            // Combine and sort all hackers
+            const allHackers = [...fakeHackers, playerEntry].sort((a, b) => b.packets - a.packets);
+            
+            container.innerHTML = '';
+            allHackers.slice(0, 10).forEach((hacker, index) => {
+                const entry = document.createElement('div');
+                entry.className = `leaderboard-entry ${hacker.isPlayer ? 'current-player' : ''}`;
+                entry.innerHTML = `
+                    <span style="display: flex; align-items: center;">
+                        <span style="margin-right: 5px;">#${index + 1}</span>
+                        ${hacker.avatar || '🤖'}
+                        <span style="margin-left: 5px;">${hacker.name}</span>
+                    </span>
+                    <span>${formatNumber(hacker.packets)}</span>
+                `;
+                
+                if (hacker.isPlayer) {
+                    entry.style.background = 'rgba(0, 80, 0, 0.8)';
+                    entry.style.border = '1px solid #00ff00';
+                    entry.style.boxShadow = '0 0 10px rgba(0, 255, 0, 0.3)';
+                }
+                
+                container.appendChild(entry);
+            });
+        }
+
+        // Enhanced hack click with reputation and live updates
+        const originalHackClick = hackClick;
+        hackClick = function() {
+            initAudio();
+            
+            let clickReward = gameState.clickPower;
+            let isCrit = false;
+            
+            // Check for critical hit upgrades and apply
+            const crit1 = gameState.clickUpgrades.find(u => u.id === 'crit1' && u.bought);
+            const crit2 = gameState.clickUpgrades.find(u => u.id === 'crit2' && u.bought);
+            const crit3 = gameState.clickUpgrades.find(u => u.id === 'crit3' && u.bought);
+            const crit4 = gameState.clickUpgrades.find(u => u.id === 'crit4' && u.bought);
+            const crit5 = gameState.clickUpgrades.find(u => u.id === 'crit5' && u.bought);
+            
+            if (crit5 && Math.random() < 0.25) { clickReward *= 100; isCrit = true; }
+            else if (crit4 && Math.random() < 0.20) { clickReward *= 10; isCrit = true; }
+            else if (crit3 && Math.random() < 0.15) { clickReward *= 5; isCrit = true; }
+            else if (crit2 && Math.random() < 0.10) { clickReward *= 3; isCrit = true; }
+            else if (crit1 && Math.random() < 0.05) { clickReward *= 2; isCrit = true; }
+            
+            gameState.packets += clickReward;
+            gameState.totalPacketsEarned += clickReward;
+            
+            // Update player profile stats
+            if (!gameState.playerProfile) initializePlayerProfile();
+            gameState.playerProfile.totalClicks++;
+            updateReputation(Math.floor(clickReward / 100));
+            
+            // Create visual effect
+            showClickEffect(isCrit ? `CRIT! +${formatNumber(clickReward)}` : `+${formatNumber(clickReward)}`, isCrit ? '#ff00ff' : '#00ff00');
+            
+            // Sound effects
+            if (isCrit) {
+                playSound(800, 0.3, 'triangle', 0.3);
+                playSound(1200, 0.3, 'triangle', 0.2);
+            } else {
+                playSound(600, 0.2, 'square', 0.2);
+            }
+            
+            // Immediate live updates
+            updateDisplay();
+            updatePlayerProfile();
+            updateLeaderboard();
+            checkAchievements();
+            saveGame();
+        };
+
+        // Enhanced upgrade buying with live updates
+        const originalBuyUpgrade = buyUpgrade;
+        buyUpgrade = function(upgradeId) {
+            const result = originalBuyUpgrade(upgradeId);
+            if (result) {
+                if (!gameState.playerProfile) initializePlayerProfile();
+                gameState.playerProfile.upgradesPurchased++;
+                updateReputation(50);
+                updateDisplay();
+                updatePlayerProfile();
+                updateLeaderboard();
+            }
+            return result;
+        };
+
+        // Enhanced node buying with live updates
+        const originalBuyNode = buyNode;
+        buyNode = function(nodeType) {
+            const result = originalBuyNode(nodeType);
+            if (result) {
+                if (!gameState.playerProfile) initializePlayerProfile();
+                gameState.playerProfile.nodesPurchased++;
+                updateReputation(25);
+                updateDisplay();
+                updatePlayerProfile();
+                updateLeaderboard();
+            }
+            return result;
+        };
+
+        // Initialize everything on load
+        const originalLoad = window.addEventListener('load', () => {});
+        window.addEventListener('load', () => {
+            initializePlayerProfile();
+            updatePlayerProfile();
+            updateLeaderboard();
+        });
+
+    </script>
+</body>
+</html>
